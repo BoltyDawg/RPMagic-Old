@@ -3,38 +3,44 @@ main: com.github.boltydawg.Main
 version: 0.5
 author: BoltyDawg
 description: A magical class-based roleplaying system!
-depend: [Magic,ArmorEquipEvent]
+depend: [Magic]
 commands:
   getbook:
     description: Gives the sender a spell book
     usage: /getbook <spell>
-    permission: rpm.isMage
-    permission-message: You don't have the rpm.isMage permission.
+    permission: rpm.mages
+    permission-message: You don't have the rpm.mages permission. 
   getwand:
     description: Give a player his/her wand
     usage: /getwand <player>
     permission: rpm.getwand
     permission-message: You don't have the rpm.getwand permission.
-  setmagic:
-    description: Set the value of a player's Magicka
-    usage: /setmagic <player> <value>
-    permission: rpm.setmagic
-    permission-message: You don't have the rpm.setmagic permission.
-  rpmcast:
+  rpcast:
     description: Cast a spell
-    usage: /rpmcast <spell>
-    permission: rpm.isMage
-    permission-message: You don't have the rpm.isMage permission.
+    usage: /rpcast <spell>
+    permission: rpm.mages
+    permission-message: You don't have the rpm.mages permission.
   teach:
-    description: teach a player a spell
+    description: Teach a Mage a spell
     usage: /teach <player> <spell>
-    permission: rpm.isMage
-    permission-message: You don't have the rpm.isMage permission.
+    permission: rpm.mages
+    permission-message: You don't have the rpm.mages permission.
   rpmage:
-    description: create or clear a mage's records
+    description: Manually create or clear a Mage's records
     usage: /rpmage <create/delete> <player>
     permission: rpm.rpmage
     permission-message: You don't have the rpm.rpmage permission.
+  r:
+    description: Let someone know that you will remember this.
+    usage: /r
+    permission: rpm.remember
+    permission-message: You don't have the rpm.remember permission.
+  start:
+    description: Start a new character
+    usage: /start <class> <name of your character, including spaces>
+    permission: rpm.start
+    permission-message: You don't have the rpm.start permission.
+    
   setclass:
     description: set a player's class
     usage: /setclass <player> <class>
@@ -42,12 +48,11 @@ commands:
     permission-message: You don't have the rpm.setclass permission.
   setsubclass:
     description: set a player's subclass
-    usage: /setclass <player> <subclass>
+    usage: /setsubclass <player> <subclass>
     permission: rpm.setsubclass
     permission-message: You don't have the rpm.setsubclass permission.
-  r:
-    description: Let someone know that you will remember this.
-    usage: /r
-    permission: rpm.r
-    permission-message: You don't have the rpm.r permission.
-    
+  setmagic:
+    description: Set the value of a player's Magicka
+    usage: /setmagic <player> <value>
+    permission: rpm.setmagic
+    permission-message: You don't have the rpm.setmagic permission.

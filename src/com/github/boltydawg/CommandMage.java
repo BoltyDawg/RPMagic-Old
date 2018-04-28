@@ -23,45 +23,38 @@ public class CommandMage implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(args == null || args.length!=2) return false;
 		Player p = Bukkit.getPlayer(args[1]);
-		if(args[0].equals("create")) {
-			if(p==null) {sender.sendMessage("Invalid player name"); return true;}
-			else {
-				File f = new File("plugins\\RPMagic\\"+p.getUniqueId().toString()+".ser");
-				try{f.createNewFile();}
-				catch(IOException o) {o.printStackTrace();}
-				
-				try {
-					Mage mag = new Mage(p.getScoreboard().getObjective("subclass").getScore(args[1]).getScore());
-					FileOutputStream fos = new FileOutputStream("plugins\\RPMagic\\"+p.getUniqueId().toString()+".ser");
-					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.reset();
-					oos.writeObject(mag);
-					oos.close();
-					p.getScoreboard().getObjective("class").getScore(args[1]).setScore(2);
-					sender.sendMessage("Mage created!");
-					return true;
-				}
-				catch(FileNotFoundException e){
-					Bukkit.broadcastMessage("File not found in MageCommand!");
-					e.printStackTrace();
-				}
-				catch(IOException e) {
-					Bukkit.broadcastMessage("IOException in MageCommand!");
-					e.printStackTrace();
-				}
+		if(p==null) {sender.sendMessage("Invalid player name"); return true;}
+		if(args[0].equalsIgnoreCase("create")) {
+			File f = new File("plugins\\RPMagic\\"+p.getUniqueId().toString()+".ser");
+			try{f.createNewFile();}
+			catch(IOException o) {o.printStackTrace();}
+			
+			try {
+				FileOutputStream fos = new FileOutputStream("plugins\\RPMagic\\"+p.getUniqueId().toString()+".ser");
+				ObjectOutputStream oos = new ObjectOutputStream(fos);
+				oos.reset();
+				oos.writeObject(new Mage());
+				oos.close();
+				p.getScoreboard().getObjective("class").getScore(args[1]).setScore(2);
+				Main.instance.getLogger().info("Mage created");
 				return true;
 			}
+			catch(FileNotFoundException e){
+				sender.sendMessage("File not found in MageCommand!");
+				e.printStackTrace();
+			}
+			catch(IOException e) {
+				sender.sendMessage("IOException in MageCommand!");
+				e.printStackTrace();
+			}
+			return true;
 		}
 		else if(args[0].equals("delete")) {
-			if(p==null) {sender.sendMessage("Invalid player name"); return true;}
-			else {
-				File f = new File("plugins\\RPMagic\\"+p.getUniqueId().toString()+".ser");
-				f.delete();
-				sender.sendMessage("Mage deleted!");
-				return true;
-			}
+			File f = new File("plugins\\RPMagic\\"+p.getUniqueId().toString()+".ser");
+			f.delete();
+			Main.instance.getLogger().info("Mage deleted");
+			return true;
 		}
 		return false;
 	}
-
 }

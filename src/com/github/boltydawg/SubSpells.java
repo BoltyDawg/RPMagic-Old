@@ -1,9 +1,8 @@
 package com.github.boltydawg;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-//import org.bukkit.entity.EntityType;
 import org.bukkit.command.ConsoleCommandSender;
 import java.util.Timer;  
 import java.util.TimerTask;
@@ -17,16 +16,17 @@ import java.util.TimerTask;
  */
 public interface SubSpells {
 	//TODO Remove cool down reductions?
+	//TODO Subtract Magicka, and add in if statements to make sure they have enough
 	static void cast(Player player, String spell) {
 		switch(spell) {
 			case"test":{
-				player.chat("Testistimus!");
-				player.sendMessage("Your subclass score is "+player.getScoreboard().getObjective("subclass").getScore(player.getName()).toString());
+				player.chat(ChatColor.GRAY+ChatColor.ITALIC.toString()+"Testistimus!");
+				player.sendMessage("Your subclass score is "+player.getScoreboard().getObjective("subclass").getScore(player.getName()).getScore());
 				break;
 			}
 			case"missile":{
 				Timer t = new Timer();
-				player.chat("Destuncion!");
+				player.chat(ChatColor.GRAY+ChatColor.ITALIC.toString()+"Destuncion!");
 				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" missile range 12 cooldown_reduction 1");
 				for(int i=1;i<4;i++) {
 					t.schedule(  
@@ -43,20 +43,20 @@ public interface SubSpells {
 			}
 			default: player.sendMessage("You can't cast this spell! ");
 		}
+		player.getInventory().setItemInOffHand(Main.leftHands.get(player));
 	}
 	
 	public class Alch implements SubSpells{
 		public static void cast(Player player, String spell) {
 			switch(spell) {
 				case "platform":{
-					player.chat("Extonda!");
+					player.chat(ChatColor.GRAY+ChatColor.ITALIC.toString()+"Extonda!");
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" platform range 5 cooldown_reduction 1");
 					break;
 				}
 				default: SubSpells.cast(player, spell);
 			}
-			player.getInventory().remove(Material.KNOWLEDGE_BOOK);
-			player.getInventory().setItemInOffHand(SpellStorage.getOffHand(player));
+			player.getInventory().setItemInOffHand(Main.leftHands.get(player));
 		}
 	}
 	
@@ -64,14 +64,13 @@ public interface SubSpells {
 		public static void cast(Player player, String spell) {
 			switch(spell) {
 				case "day":{
-					player.chat("DIVONLA!");
+					player.chat(ChatColor.GRAY+ChatColor.ITALIC.toString()+"DIVONLA!");
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" day cooldown_reduction 1");
 					break;
 				}
 				default: SubSpells.cast(player, spell);
 			}
-			player.getInventory().remove(Material.KNOWLEDGE_BOOK);
-			player.getInventory().setItemInOffHand(SpellStorage.getOffHand(player));
+			player.getInventory().setItemInOffHand(Main.leftHands.get(player));
 		}
 	}
 	
@@ -81,7 +80,7 @@ public interface SubSpells {
 			switch(spell) {
 				case"skel":{
 				//player.getWorld().spawnEntity(player.getLocation(), EntityType.SKELETON);
-					player.chat("Remedorus!");
+					player.chat(ChatColor.GRAY+ChatColor.ITALIC.toString()+"Remedorus!");
 					player.getScoreboard().getPlayerTeam(player).addPlayer(player);
 					ConsoleCommandSender cons = Bukkit.getServer().getConsoleSender();
 					String cmd1 = "execute "+player.getName()+" ~ ~ ~ /summon skeleton ~ ~1 ~ {CustomName:\""+player.getName()+"'s Minion\",CustomNameVisible:1,HandItems:[{id:\"minecraft:bow\",Count:1b,tag:{ench:[{id:48,lvl:2}]}},{}],HandDropChances:[0.0F,0.085F]}";
@@ -93,8 +92,7 @@ public interface SubSpells {
 				}
 			default: SubSpells.cast(player, spell);
 			}
-			player.getInventory().remove(Material.KNOWLEDGE_BOOK);
-			player.getInventory().setItemInOffHand(SpellStorage.getOffHand(player));
+			player.getInventory().setItemInOffHand(Main.leftHands.get(player));
 		}
 	}
 	
@@ -102,14 +100,13 @@ public interface SubSpells {
 		public static void cast(Player player, String spell) {
 			switch(spell) {
 				case"boom":{
-					player.chat("Expulstiva!");
+					player.chat(ChatColor.GRAY+ChatColor.ITALIC.toString()+"Expulstiva!");
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" boom cooldown_reduction 1");
 					break;
 				}
 				default: SubSpells.cast(player, spell);
 			}
-			player.getInventory().remove(Material.KNOWLEDGE_BOOK);
-			player.getInventory().setItemInOffHand(SpellStorage.getOffHand(player));
+			player.getInventory().setItemInOffHand(Main.leftHands.get(player));
 		}
 	}
 }

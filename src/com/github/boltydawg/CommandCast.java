@@ -6,7 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * This command class is what is run when a player does /cast
+ * This command class is what is run when a player does /rpmcast
  * or right clicks with a spell book in their left hand.
  * I split up the code here because there's a lot of it, 
  * and it would be very messy to put all in one class

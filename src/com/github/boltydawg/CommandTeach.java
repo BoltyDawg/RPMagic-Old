@@ -23,24 +23,24 @@ public class CommandTeach implements CommandExecutor {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		// TODO Auto-generated method stub
 		if(args == null || args.length!=2) return false;
-		if (Bukkit.getPlayer(args[0]) == null) {sender.sendMessage("Invalid player name"); return true;}
+		Player p = Bukkit.getPlayer(args[0]);
+		if (p == null) {sender.sendMessage("Invalid player name"); return true;}
+		else if(p.getScoreboard().getObjective("class").getScore(p.getName()).getScore()!=2) {sender.sendMessage("Only Mages can learn spells!"); return true;}
 		else if(!Spells.isValid(args[1])) {sender.sendMessage("Invalid spell"); return true;}
 		else {write(Bukkit.getPlayer(args[0]),args[1]); return true;}
 	}
 	
-	public void write(Player player, String spell) {
+	private void write(Player player, String spell) {
+		if(!Spells.isRightSubclass(player.getScoreboard().getObjective("subclass").getScore(player.getName()).getScore(), spell)) {
+			player.sendMessage("You can't learn this spell.");
+			return;
+		}
 		try {
 			FileInputStream fis = new FileInputStream("plugins\\RPMagic\\"+player.getUniqueId().toString()+".ser");
 			ObjectInputStream ois = new ObjectInputStream(fis);
 			Mage result = (Mage)ois.readObject();
 			ois.close();
-			
-			if(!Spells.isRightSubclass(result.subclass, spell)) {
-				player.sendMessage("You can't learn this spell.");
-				return;
-			}
 			
 			FileOutputStream fos = new FileOutputStream("plugins\\RPMagic\\"+player.getUniqueId().toString()+".ser");
 			ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -49,7 +49,7 @@ public class CommandTeach implements CommandExecutor {
 				if(result.spells.contains(spell)) player.sendMessage("You already know this spell!");
 				else {result = result.teach(spell); player.sendMessage("You learned a spell!");}
 			}
-			else Bukkit.broadcastMessage("There was an attempt to add a spell that doesn't exist");
+			else Bukkit.broadcastMessage("This message should never be sent, it's just a safety precaution. Please tell Jason if you see this! He'll be amazed");
 			
 			oos.reset();
 			oos.writeObject(result);
@@ -83,15 +83,15 @@ public class CommandTeach implements CommandExecutor {
 			return Spells.toText(result.spells);
 		}
 		catch(FileNotFoundException e){
-			e.printStackTrace();
+			Main.instance.getLogger().warning("Could not find "+player.getName()+"'s file!");
 			return null;
 		}
 		catch(IOException e) {
-			e.printStackTrace();
+			Main.instance.getLogger().warning("IOException in "+player.getName()+"'s file!");
 			return null;
 		}
 		catch(ClassNotFoundException e) {
-			e.printStackTrace();
+			Main.instance.getLogger().warning("Class not found in "+player.getName()+"'s file!");
 			return null;
 		}
 	}

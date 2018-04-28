@@ -8,7 +8,7 @@ import org.bukkit.command.CommandSender;
 import java.util.Arrays;
 
 //import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.ItemFlag;
+//import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.KnowledgeBookMeta;
 import org.bukkit.entity.Player;
@@ -23,14 +23,14 @@ import org.bukkit.NamespacedKey;
  */
 
 public class CommandBook implements CommandExecutor {
-
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(!(sender instanceof Player) || args == null || args.length!=1) return false;
 		if(Spells.isValid(args[0])) {
 			ItemStack book = setMyMeta(new ItemStack(Material.KNOWLEDGE_BOOK), args);
 			Player p = ((Player)sender);
-			SpellStorage.store(new SpellStorage(p,p.getInventory().getItemInOffHand()));
+			p.getInventory().remove(Material.KNOWLEDGE_BOOK);
+			Main.leftHands.put(p, p.getInventory().getItemInOffHand());
 			p.getInventory().setItemInOffHand(book);
 			return true;
 		}
@@ -49,7 +49,7 @@ public class CommandBook implements CommandExecutor {
 		meta.setDisplayName("Casting Guide");
 		meta.setLore(Arrays.asList(lore));
 		//meta.addEnchant(Enchantment.VANISHING_CURSE, 1, true);
-		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+		//meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		meta.setRecipes(Arrays.asList(new NamespacedKey(Main.instance,"crafting_table")));
 		item.setItemMeta(meta);
 		return item;

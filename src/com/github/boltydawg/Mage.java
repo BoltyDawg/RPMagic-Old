@@ -13,10 +13,8 @@ public class Mage implements Serializable{
 	
 	//FIELDS
 	public ArrayList<String> spells;
-	public int subclass;
 	
-	public Mage(int s) {
-		subclass = s;
+	public Mage() {
 		spells = new ArrayList<String>();
 	}
 	

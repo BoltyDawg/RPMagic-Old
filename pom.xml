@@ -23,18 +23,6 @@
         <id>spigot-repo</id>
         <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
     </repository>
-    <repository>
-		<id>inventive-repo</id>
-		<url>http://repo.inventivetalent.org/content/groups/public/</url>
-	</repository>
-	 <repository>
-		<id>bcel-findbugs</id>
-		<url>https://mvnrepository.com/artifact/com.google.code.findbugs/bcel-findbugs</url>
-	</repository>
-	<repository>
-		<id>mongodb-driver</id>
-		<url>https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver</url>
-	</repository>
 </repositories>
 <dependencies>
     <!--Spigot API-->
@@ -43,23 +31,6 @@
            <artifactId>spigot-api</artifactId>
            <version>1.12.2-R0.1-SNAPSHOT</version>
            <scope>provided</scope>
-    </dependency>
-    <dependency>
-            <groupId>org.bukkit</groupId>
-            <artifactId>bukkit</artifactId>
-            <version>1.12.2-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-    </dependency>
-    <dependency>
-		<groupId>org.inventivetalent.nicknamer</groupId>
-		<artifactId>api</artifactId>
-		<version>3.14.1-SNAPSHOT</version>
-		<exclusions>
-			<exclusion>
-				<groupId>org.inventivetalent</groupId>
-				<artifactId>data-api</artifactId>
-			</exclusion>
-		</exclusions>
     </dependency>
  </dependencies>
 </project>
