@@ -8,17 +8,17 @@ import java.io.File;
 import java.util.HashMap;
 
 import org.bukkit.plugin.Plugin;
-//TODO Player death event: usual shit, clear them from the attributes map
-//TODO get rid of the bad player messages
-//TODO Incorporate the other classes and subclasses
+//TODO Rework the spell storage system. Add in a /spells command that allows them to chose what spells come up when they click their wand
+				// will need two maps (NOT MAGES), one for all known spells and one for selected spells. Try to do JSON or YML or something so it doesn't unload chunks 
+//TODO Player death event: reset scoreboard scores, clear them from the maps, remove their Stamina / Magicka bar
+//TODO Do the subclasses, multiple listeners
 //TODO Exp
-//TODO add more spells
-//TODO Make it so that they have to drink the potions twice? - give them a half empty after drinking first time
-//TODO Change /mage command and add in /newchar
-	//TODO in /newchar, change their nickname to class color + their current nickname. However, this interfers with getting their name, you'd have to clear the formatting first. A lot of extra work that's maybe not worth it in the end
-//TODO Think of a system that makes it so that player's can't set their own nickname whenever?
-	//TODO a /start command? Can be: /start <class> <name of your character (including spaces)>. it'll only run if your class score is 0, a.k.a. you've died.
-//TODO decide what commands I want to keep/remove from the plugin.yml
+//TODO add all the spells
+//TODO do the spawn chunk stuff in the start command
+//TODO Clean up and format player messages
+//TODO Change from using serializable to JSON or another format, do research
+//TODO fix /r so that it uses the nickname and has a proper color format?
+//TODO AFTER UPDATE: set up the boss bars on join/leave/death, make sure all the commands still work
 public class Main extends JavaPlugin{
 	public static Main instance;
 	public static boolean nick;

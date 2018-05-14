@@ -11,7 +11,6 @@ public class Mage implements Serializable{
 	
 	 static final long serialVersionUID = 137L;
 	
-	//FIELDS
 	public ArrayList<String> spells;
 	
 	public Mage() {

@@ -48,8 +48,6 @@ public class CommandBook implements CommandExecutor {
 		KnowledgeBookMeta meta = (KnowledgeBookMeta) item.getItemMeta();
 		meta.setDisplayName("Casting Guide");
 		meta.setLore(Arrays.asList(lore));
-		//meta.addEnchant(Enchantment.VANISHING_CURSE, 1, true);
-		//meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		meta.setRecipes(Arrays.asList(new NamespacedKey(Main.instance,"crafting_table")));
 		item.setItemMeta(meta);
 		return item;

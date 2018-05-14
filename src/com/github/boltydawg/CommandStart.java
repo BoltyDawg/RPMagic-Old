@@ -14,7 +14,6 @@ public class CommandStart implements CommandExecutor {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		// TODO Auto-generated method stub 
 		if(!(sender instanceof Player)) {sender.sendMessage("this command is only for players, you machine"); return true;}
 		Player p = ((Player)sender);
 		Score score = p.getScoreboard().getObjective("class").getScore(p.getName());

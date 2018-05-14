@@ -16,7 +16,6 @@ import java.util.TimerTask;
  */
 public interface SubSpells {
 	//TODO Remove cool down reductions?
-	//TODO Subtract Magicka, and add in if statements to make sure they have enough
 	static void cast(Player player, String spell) {
 		switch(spell) {
 			case"test":{
