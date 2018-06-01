@@ -39,7 +39,12 @@ commands:
     description: Start a new character
     usage: /start <class> <name of your character, including spaces>
     permission: rpm.start
-    permission-message: You don't have the rpm.start permission.
+    permission-message: You don't have the rpm.start permission. 
+  dropxp:
+    description: Drops the desired amount of XP, or all
+    usage: /dropxp <amount, or all>
+    permission: rpm.default
+    permission-message: You don't have the rpm.default permission. 
     
   setclass:
     description: set a player's class
