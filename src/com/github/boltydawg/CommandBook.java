@@ -30,7 +30,7 @@ public class CommandBook implements CommandExecutor {
 			ItemStack book = setMyMeta(new ItemStack(Material.KNOWLEDGE_BOOK), args);
 			Player p = ((Player)sender);
 			p.getInventory().remove(Material.KNOWLEDGE_BOOK);
-			Main.leftHands.put(p, p.getInventory().getItemInOffHand());
+			Main.leftHands.put(p.getUniqueId(), p.getInventory().getItemInOffHand());
 			p.getInventory().setItemInOffHand(book);
 			return true;
 		}

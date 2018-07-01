@@ -17,9 +17,10 @@ public class CommandCast implements CommandExecutor {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(!(sender instanceof Player) || args == null || args.length != 1) return false;
-		
-		else if(Spells.isValid(args[0])){Spells.cast((Player)sender, args[0]); return true;}
-		
+		else if(Spells.isValid(args[0])) {
+			Spells.cast((Player)sender, args[0]);
+			return true;
+		}
 		else {sender.sendMessage("Invalid spell name"); return true;}
 	}
 }

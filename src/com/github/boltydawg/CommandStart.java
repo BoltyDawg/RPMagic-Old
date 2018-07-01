@@ -1,11 +1,15 @@
 package com.github.boltydawg;
 
+import java.util.ArrayList;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -19,9 +23,26 @@ public class CommandStart implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(!(sender instanceof Player)) {sender.sendMessage("this command is only for players, you machine"); return true;}
 		Player p = ((Player)sender);
-		if(p.getScoreboard().getObjective("class").getScore(p.getName()).getScore()!=0) {p.sendMessage(ChatColor.GRAY+"Only dead people can use this."); return true;}
+		if(Main.scoreboard.getObjective("alive").getScore(p.getName()).getScore()!=0) {p.sendMessage(ChatColor.GRAY+"Only dead people can use this."); return true;}
 		else if(args==null|| args.length<2) return false;
-		Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "rpmage delete "+p.getName());
+		
+		Main.mages.remove(p.getUniqueId());
+		Main.leftHands.remove(p.getUniqueId());
+		p.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(20);
+		p.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).setBaseValue(0);
+		
+		if(Main.beacons.containsKey(p.getUniqueId())) {
+			for(Entity e : p.getWorld().getNearbyEntities(Main.beacons.get(p.getUniqueId()),1,1,1)) {
+				if(e.getType().equals(EntityType.ARMOR_STAND)) {
+					e.remove();
+				}	
+			}
+			Main.beacons.get(p.getUniqueId()).getBlock().breakNaturally();
+			Main.beacons.remove(p.getUniqueId());
+		}
+		Main.scoreboard.getObjective("alive").getScore(p.getName()).setScore(1);
+		//TODO do all the stuff that was in the spawn chunk: mcmmo reset, give kits
+		//TODO setup / reset their boss bars
 		
 		String name = "";
 		if(Main.nick) {
@@ -38,33 +59,37 @@ public class CommandStart implements CommandExecutor {
 		
 		String cla = args[0];
 		if(cla.equalsIgnoreCase("Fighter")) {
-			p.getScoreboard().getObjective("class").getScore(p.getName()).setScore(1);
-			p.getScoreboard().getObjective("Stamina").getScore(p.getName()).setScore(Main.BASE_STAM);
+			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+p.getName()+" parent add fighter");
+			Main.scoreboard.getObjective("class").getScore(p.getName()).setScore(1);
+			Main.scoreboard.getObjective("Stamina").getScore(p.getName()).setScore(Main.BASE_STAM);
 			p.sendMessage(ChatColor.GRAY+"You are now a "+ChatColor.RED+"Fighter!");
 		}
 		else if(cla.equalsIgnoreCase("Mage")) {
-			p.getScoreboard().getObjective("class").getScore(p.getName()).setScore(2);
-			p.getScoreboard().getObjective("Magicka").getScore(p.getName()).setScore(Main.BASE_MAG);
-			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "rpmage create "+p.getName());
+			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+p.getName()+" parent add mage");
+			Main.scoreboard.getObjective("class").getScore(p.getName()).setScore(2);
+			Main.scoreboard.getObjective("Magicka").getScore(p.getName()).setScore(Main.BASE_MAG);
+			Main.mages.put(p.getUniqueId(), new ArrayList<String>());
+			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"getwand "+p.getName());
 			p.sendMessage(ChatColor.GRAY+"You are now a "+ChatColor.BLUE+"Mage!");
 		}
 		else if(cla.equalsIgnoreCase("Ranger")) {
-			p.getScoreboard().getObjective("class").getScore(p.getName()).setScore(3);
-			p.getScoreboard().getObjective("Stamina").getScore(p.getName()).setScore(Main.BASE_STAM);
+			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+p.getName()+" parent add ranger");
+			Main.scoreboard.getObjective("class").getScore(p.getName()).setScore(3);
+			Main.scoreboard.getObjective("Stamina").getScore(p.getName()).setScore(Main.BASE_STAM);
 			p.sendMessage(ChatColor.GRAY+"You are now a "+ChatColor.DARK_GREEN+"Ranger!");
 		}
 		else {
 			p.sendMessage(ChatColor.GRAY+"Invalid class name, your options are:\n"+ChatColor.RED+"Fighter   "+ChatColor.BLUE+"Mage   "+ChatColor.DARK_GREEN+"Ranger");
 			return true;
 		}
+		
 		ItemStack journal = new ItemStack(Material.BOOK_AND_QUILL);
 		BookMeta jmet = (BookMeta)journal.getItemMeta();
 		jmet.addPage("");
 		jmet.setDisplayName(name+"'s Journal");
-		jmet.addEnchant(Enchantment.BINDING_CURSE, 1, false);
 		journal.setItemMeta(jmet);
 		p.getInventory().addItem(journal);
-		//do all the stuff that was in the spawn chunk: permissions, mcmmo reset, give items
+		
 		return true;
 	}
 

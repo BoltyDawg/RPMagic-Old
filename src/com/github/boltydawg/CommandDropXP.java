@@ -11,11 +11,8 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
 import java.util.ArrayList;
-import io.loyloy.nicky.Nick;
 
 public class CommandDropXP implements CommandExecutor {
-
-	//TODO gonna have to make them drop a custom potion that has their xp amount in it
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(!(sender instanceof Player)) return false;
@@ -28,7 +25,7 @@ public class CommandDropXP implements CommandExecutor {
 			l.add(ChatColor.YELLOW.toString()+xp+ChatColor.YELLOW+" orbs");
 			met.setLore(l);
 			met.setColor(Color.GREEN);
-			met.setDisplayName(ChatColor.GREEN+new Nick(p).get()+ChatColor.GREEN+"'s XP");
+			met.setDisplayName(ChatColor.GREEN+Main.getName(p)+ChatColor.GREEN+"'s XP");
 			met.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
 			bottle.setItemMeta(met);
 			p.getInventory().addItem(bottle);

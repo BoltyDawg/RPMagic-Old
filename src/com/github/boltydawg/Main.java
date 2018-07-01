@@ -1,36 +1,60 @@
 package com.github.boltydawg;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scoreboard.Scoreboard;
+import org.anjocaido.groupmanager.GroupManager;
+
+import io.loyloy.nicky.Nick;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
 
 import org.bukkit.plugin.Plugin;
-//Read about Flat Files, and choose a type (probably YAML? or JSON)
-//TODO Rework the spell storage system. Add in a /spells command that allows them to chose what spells come up when they click their wand
-				// will need two maps (NOT MAGES), one for all known spells and one for selected spells. Try to do JSON or YML or something so it doesn't unload chunks
-				// Put everything in one class and have CommandTeach and CommandMage reference that class. doing CommandTeach.getSpells is... gross
-//TODO on /start: reset scoreboard scores, clear them from the maps, remove their Stamina / Magicka bar, rest of spawn chunk stuff
-//TODO Do the subclasses, multiple listeners
+
+//TODO either find a new map or figure out way to make the badlands possible
+// TODO Finish all the subclasses, AND DO THEIR CRAFTING, AND THEIR MANUALS. Go through each subclass individually, focus in on it.
+//TODO Skim through subclasses and see if there are any more damage cooldowns I should add
+//TODO Buy mcmmo
+//TODO remove barbarian Stamina and replace it with rage
+//TODO improve Mage casting system: maybe let them chose a spell that they can bind to left mouse, rather than it always being beam?
+// TODO Look up some pre-made 1.13 cmd block stuff that can be used as spells? Like the black hole
+//TODO look into Magic autmatica
+//TODO make public stuff protected instead. OPh
+// TODO fix /r so that it uses the nickname and has a proper color format? or.... delete it? :(
 //TODO Store a map of placed heads with their location as the key and the SkullMeta as the object, so that when a player breaks one of these it gives them the skull with the same meta?
-//TODO Exp
-//TODO add all the spells
-//TODO Clean up and format player messages
-//TODO fix /r so that it uses the nickname and has a proper color format?
-//TODO AFTER UPDATE: set up the boss bars on join/leave/death, make sure all the commands still work
+/**TODO: AFTER UPDATE
+ * on /start: remove their Stamina / Magicka bar
+ * set up the boss bars on join/leave/death
+ * make sure all the commands still work
+ * Make Hoplites
+ */
 public class Main extends JavaPlugin{
 	public static Main instance;
+	public static GroupManager perms;
 	public static boolean nick;
 	public static final int BASE_STAM = 100;
 	public static final int BASE_MAG = 100;
-	public static HashMap<Player,ItemStack> leftHands;
+	public static Scoreboard scoreboard;
 	
+	public static HashMap<UUID,ItemStack> leftHands;
+	public static HashMap<UUID,ArrayList<String>> mages;
+	public static HashMap<UUID,Location> beacons;
+	public static HashMap<Player,Integer> attributes;
 	@Override
 	public void onEnable() {
 		instance = this;
-		leftHands = new HashMap<Player,ItemStack>();
+		mages = new HashMap<UUID,ArrayList<String>>();
+		leftHands = new HashMap<UUID,ItemStack>();
+		beacons = new HashMap<UUID,Location>();
+		scoreboard=this.getServer().getScoreboardManager().getMainScoreboard();
+		attributes = new HashMap<Player,Integer>();
 		
 		Plugin magicPlugin = Bukkit.getPluginManager().getPlugin("Magic");
 		if(magicPlugin==null || !(magicPlugin.getName().equals("Magic"))) {
@@ -45,41 +69,67 @@ public class Main extends JavaPlugin{
 		if(namer == null) {instance.getLogger().info("Launching without Nicky"); nick = false;}
 		else {instance.getLogger().info("Launching with Nicky"); nick = true;}
 		
+		//perms = GroupManager.BukkitPermissions;//(GroupManager)Bukkit.getPluginManager().getPlugin("GroupManager");
+		
 		getServer().getPluginManager().registerEvents(new ListenerClass(), this);
 		getServer().getPluginManager().registerEvents(new ListenerSubclass(), this);
+		ArrayList<String> block = new ArrayList<String>();
+		block.add(Material.SKULL.name());
+		block.add(Material.SKULL_ITEM.name());
+		getServer().getPluginManager().registerEvents(new ArmorListener(block), this);
 		
 		this.getCommand("rpcast").setExecutor(new CommandCast());
 		this.getCommand("getbook").setExecutor(new CommandBook());
 		this.getCommand("getwand").setExecutor(new CommandWand());
 		this.getCommand("teach").setExecutor(new CommandTeach());
-		this.getCommand("rpmage").setExecutor(new CommandMage());
 		this.getCommand("r").setExecutor(new CommandRemember());
 		this.getCommand("start").setExecutor(new CommandStart());
 		this.getCommand("dropxp").setExecutor(new CommandDropXP());
+		this.getCommand("forget").setExecutor(new CommandForget());
+		this.getCommand("subclass").setExecutor(new CommandSubclass());
+		this.getCommand("spellinfo").setExecutor(new CommandSpellInfo());
 		
 		File f = new File("plugins\\RPMagic");
 		f.mkdirs();
 		
 		//Initializes the scoreboard objectives if this is the first time starting
-		try {Bukkit.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("class", "dummy");}
+		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("class", "dummy");}
 		catch(Exception e) {;}
-		try {Bukkit.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("subclass", "dummy");}
+		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("subclass", "dummy");}
 		catch(Exception e) {;}
-		try {Bukkit.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("role", "dummy");}
+		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("role", "dummy");}
 		catch(Exception e) {;}
-		try {Bukkit.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("Magicka", "dummy");}
+		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("Magicka", "dummy");}
 		catch(Exception e) {;}
-		try {Bukkit.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("Stamina", "dummy");}
+		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("Stamina", "dummy");}
 		catch(Exception e) {;}
-		try {Bukkit.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("rage", "stat.damageDealt");}
+		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("damage", "stat.damageDealt");}
 		catch(Exception e) {;}
+		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("alive", "dummy");}
+		catch(Exception e) {;}
+		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("damageTime", "dummy");}
+		catch(Exception e) {;}
+		
+		//Creates the files necessary for storage
+		SerUtil.createFiles();
+		//Reads from those files to instantiate the objects
+		SerUtil.loadValues();
 		
 		instance.getLogger().info("RPMagic version " + instance.getDescription().getVersion() + " is now enabled!");
 	}
 	@Override
 	public void onDisable() {
+		SerUtil.storeValues();
+		
 		instance.getLogger().info("RPMagic version "+instance.getDescription().getVersion() + " is now disabled");
 		instance = null;
-		leftHands=null;
+	}
+	
+	public static String getName(Player p) {
+		if(Main.nick==false) return p.getName();
+		
+		String n = new Nick(p).get();
+		if(n==null) return p.getName();
+		else return ChatColor.stripColor(n);
 	}
 }

@@ -13,8 +13,8 @@ commands:
   getwand:
     description: Give a player his/her wand
     usage: /getwand <player>
-    permission: rpm.getwand
-    permission-message: You don't have the rpm.getwand permission.
+    permission: rpm.admin
+    permission-message: You don't have the rpm.admin permission.
   rpcast:
     description: Cast a spell
     usage: /rpcast <spell>
@@ -23,41 +23,35 @@ commands:
   teach:
     description: Teach a Mage a spell
     usage: /teach <player> <spell>
-    permission: rpm.mages
-    permission-message: You don't have the rpm.mages permission.
-  rpmage:
-    description: Manually create or clear a Mage's records
-    usage: /rpmage <create/delete> <player>
-    permission: rpm.rpmage
-    permission-message: You don't have the rpm.rpmage permission.
+    permission: rpm.admin
+    permission-message: You don't have the rpm.admin permission.
   r:
     description: Let someone know that you will remember this.
     usage: /r
-    permission: rpm.remember
-    permission-message: You don't have the rpm.remember permission.
+    permission: rpm.default
+    permission-message: You don't have the rpm.default permission.
   start:
     description: Start a new character
     usage: /start <class> <name of your character, including spaces>
-    permission: rpm.start
-    permission-message: You don't have the rpm.start permission. 
+    permission: rpm.default
+    permission-message: You don't have the rpm.default permission. 
   dropxp:
     description: Drops the desired amount of XP, or all
     usage: /dropxp <amount, or all>
     permission: rpm.default
-    permission-message: You don't have the rpm.default permission. 
-    
-  setclass:
-    description: set a player's class
-    usage: /setclass <player> <class>
-    permission: rpm.setclass
-    permission-message: You don't have the rpm.setclass permission.
-  setsubclass:
+    permission-message: You don't have the rpm.default permission.
+  forget:
+    description: Forget a spell
+    usage: /forget <name of spell, in lowercase>
+    permission: rpm.mages
+    permission-message: You don't have the rpm.mages permission. 
+  subclass:
     description: set a player's subclass
-    usage: /setsubclass <player> <subclass>
-    permission: rpm.setsubclass
-    permission-message: You don't have the rpm.setsubclass permission.
-  setmagic:
-    description: Set the value of a player's Magicka
-    usage: /setmagic <player> <value>
-    permission: rpm.setmagic
-    permission-message: You don't have the rpm.setmagic permission.
+    usage: /subclass <player> <subclass>
+    permission: rpm.admin
+    permission-message: You don't have the rpm.admin permission.
+  spellinfo:
+    description: Get the details of a certain spell
+    usage: /spellinfo <spell name>
+    permission: rpm.mages
+    permission-message: You don't have the rpm.mages permission.
