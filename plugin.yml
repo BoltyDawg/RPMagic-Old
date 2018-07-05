@@ -55,3 +55,8 @@ commands:
     usage: /spellinfo <spell name>
     permission: rpm.mages
     permission-message: You don't have the rpm.mages permission.
+  getkey:
+    description: Gives you the key to all of your chests
+    usage: /getkey
+    permission: rpm.default
+    permission-message: You don't have the rpm.default permission.

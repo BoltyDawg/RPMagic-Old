@@ -26,7 +26,7 @@ public class CommandSpellInfo implements CommandExecutor {
 		switch(spell) {
 		//Common tier
 		case "beam": return ChatColor.RED+"Beam:"+ChatColor.GRAY+"<10 Magicka>\n"+ChatColor.YELLOW+"Shoots 2 lasers that damage enemies. Does same damage as Iron Sword, and you can still deal crits with it by jumping.";
-		case "fireball": return ChatColor.RED+"Fireball:"+ChatColor.GRAY+"<15 Magicka>\n"+ChatColor.YELLOW+"A basic attack that launches a fireball at your enemy";
+		case "fireball": return ChatColor.RED+"Fireball:"+ChatColor.GRAY+"<15 Magicka>\n"+ChatColor.YELLOW+"Launches a fireball that explodes and sets fire to the area.";
 		case "flashbang": return ChatColor.RED+"Flashbang:"+ChatColor.GRAY+"<15 Magicka>\n"+ChatColor.YELLOW+"A projectile that blinds anybody within its radius. Works well for PvP.";
 		case "ghast": return ChatColor.RED+"Ghast:"+ChatColor.GRAY+"<20 Magicka>\n"+ChatColor.YELLOW+"Summon a ghast to fight with you. Doesn't work well for PvE.";
 		case "soothe": return ChatColor.RED+"Soothe:"+ChatColor.GRAY+"<33 Magicka>\n"+ChatColor.YELLOW+"Give your self regeneration for 10 seconds";

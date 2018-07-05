@@ -18,11 +18,13 @@ import java.util.UUID;
 
 import org.bukkit.plugin.Plugin;
 
-//TODO either find a new map or figure out way to make the badlands possible
+//TODO make sheriffs. Figure out how to make it work with Faction jails? Wanted posters
+	//Aren't reliant on Townee. Hit someone with baton and it updates their arrested score then forces them to be mounted on the sheriff and puts them in adventure mode. Right clicking the baton/ string or whatever 
+	//releases them and gives them extreme slowness for a bit so they can't run off, or permanently? It could be like they're hogtied
+//TODO locks and keys recipes for blacksmiths
 // TODO Finish all the subclasses, AND DO THEIR CRAFTING, AND THEIR MANUALS. Go through each subclass individually, focus in on it.
 //TODO Skim through subclasses and see if there are any more damage cooldowns I should add
-//TODO Buy mcmmo
-//TODO remove barbarian Stamina and replace it with rage
+//TODO Buy mcmmo... eh
 //TODO improve Mage casting system: maybe let them chose a spell that they can bind to left mouse, rather than it always being beam?
 // TODO Look up some pre-made 1.13 cmd block stuff that can be used as spells? Like the black hole
 //TODO look into Magic autmatica
@@ -30,10 +32,10 @@ import org.bukkit.plugin.Plugin;
 // TODO fix /r so that it uses the nickname and has a proper color format? or.... delete it? :(
 //TODO Store a map of placed heads with their location as the key and the SkullMeta as the object, so that when a player breaks one of these it gives them the skull with the same meta?
 /**TODO: AFTER UPDATE
- * on /start: remove their Stamina / Magicka bar
- * set up the boss bars on join/leave/death
+ * on death: remove their Stamina / Magicka bar
+ * set up the boss bars on join/leave/death, make sure to replace barbarian stamina with rage
  * make sure all the commands still work
- * Make Hoplites
+ * Make Hoplites and knight spears
  */
 public class Main extends JavaPlugin{
 	public static Main instance;
@@ -88,6 +90,7 @@ public class Main extends JavaPlugin{
 		this.getCommand("forget").setExecutor(new CommandForget());
 		this.getCommand("subclass").setExecutor(new CommandSubclass());
 		this.getCommand("spellinfo").setExecutor(new CommandSpellInfo());
+		this.getCommand("getkey").setExecutor(new CommandKey());
 		
 		File f = new File("plugins\\RPMagic");
 		f.mkdirs();
@@ -103,7 +106,7 @@ public class Main extends JavaPlugin{
 		catch(Exception e) {;}
 		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("Stamina", "dummy");}
 		catch(Exception e) {;}
-		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("damage", "stat.damageDealt");}
+		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("damage", "stat.damageDealt").setDisplayName("RAGE");}
 		catch(Exception e) {;}
 		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("alive", "dummy");}
 		catch(Exception e) {;}

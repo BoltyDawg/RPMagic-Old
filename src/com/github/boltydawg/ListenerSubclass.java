@@ -77,7 +77,7 @@ public class ListenerSubclass implements Listener{
 			int sub = Main.scoreboard.getObjective("subclass").getScore(p.getName()).getScore();
 			if(item!=null && item.getType()!=Material.AIR) {
 				//Barbarian Rage
-				if(item.getType().equals(Material.BLAZE_POWDER) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains(ChatColor.RED+"BARBARIAN "+ChatColor.DARK_RED+"RAGE")) {
+				if(item.getType().equals(Material.BLAZE_POWDER) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains(ChatColor.DARK_RED + "GRRRAAAAGHHH")) {
 					if(sub==1) {
 						p.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE,260,2));
 						p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE,260,0));
@@ -103,9 +103,15 @@ public class ListenerSubclass implements Listener{
 					}
 				}
 				//Barbarians equipping bone
-				else if(sub==1 && item.equals(barbarianBone(Main.getName(p)))) {
-					p.getInventory().setArmorContents(new ItemStack[] {null,null,null,item});
-					p.getInventory().removeItem(item);
+				else if(sub==1 && item.getType().equals(Material.BONE) && item.getItemMeta().getLore()!=null) {
+					if(p.getInventory().getHelmet()!=null && p.getInventory().getHelmet().getType()!=Material.AIR){
+						p.sendMessage(ChatColor.DARK_PURPLE+"YOU EAT YOUR CURRENT BONE");
+						p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_BURP, 3.0F, 1F);
+					}
+					ItemStack bone = item.clone();
+					bone.setAmount(1);
+					p.getInventory().setHelmet(bone);
+					item.setAmount(item.getAmount()-1);
 				}
 				//Tank shield
 				else if(sub==4 && event.getHand().equals(EquipmentSlot.HAND) && item.getType().equals(Material.SHIELD) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains("An Unbreakable Wall")){//TODO, make sure this lore is right
@@ -132,61 +138,62 @@ public class ListenerSubclass implements Listener{
 				}
 				//Assassins
 				else if(sub==7) {
-					ItemStack mainHand = p.getInventory().getItemInMainHand();
-					ItemStack offHand = p.getInventory().getItemInOffHand();
 					//Cloak
-					if(mainHand!=null && mainHand.getType().equals(Material.WATCH) && mainHand.getItemMeta().getLore()!=null && mainHand.getItemMeta().getLore().contains(ChatColor.GRAY+"Was there ever any doubt?")) { //Make the lore in dark red?
-						int dmg = LastDamageRunner.timeSinceLastDamage(p);
-						if(dmg<=5) {
-							TextComponent msg = new TextComponent();
-							msg.setText("You have recently taken damage and must wait another "+(5-dmg)+" seconds");
-							msg.setColor(ChatColor.AQUA);
-							p.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
-							return;
+					if(item!=null && item.getType().equals(Material.WATCH) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains(ChatColor.GRAY+"Was there ever any doubt?")) { //Make the lore in dark red?
+						if(event.getHand().equals(EquipmentSlot.HAND)) {
+							if(p.hasPotionEffect(PotionEffectType.INVISIBILITY) && p.hasPotionEffect(PotionEffectType.INCREASE_DAMAGE))
+								return;
+							int dmg = RunnableLastDamage.timeSinceLastDamage(p);
+							if(dmg<=5) {
+								TextComponent msg = new TextComponent();
+								msg.setText("You have recently taken damage and must wait another "+(5-dmg)+" seconds");
+								msg.setColor(ChatColor.AQUA);
+								p.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+								return;
+							}
+							Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+p.getName()+" cloak");
+							if(!cool2.getOrDefault(p, false)) {	
+								p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE,300,0,false,true));
+								event.setCancelled(true);
+								cool2.put(p, true);
+								new BukkitRunnable(){
+							        @Override
+							        public void run(){
+							        	cool2.remove(p);
+							        	TextComponent msg = new TextComponent();
+										msg.setText("Cloak recharged!");
+										msg.setColor(ChatColor.LIGHT_PURPLE);
+										p.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+										return;
+							        }
+							   }.runTaskLater(Main.instance, 900L);
+							}
 						}
-						Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+p.getName()+" cloak");
-						if(!cool2.getOrDefault(p, false)) {	
-							p.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE,200,0,false,true));
-							event.setCancelled(true);
-							cool2.put(p, true);
-							new BukkitRunnable(){
-						        @Override
-						        public void run(){
-						        	cool2.remove(p);
-						        	TextComponent msg = new TextComponent();
-									msg.setText("Cloak recharged!");
-									msg.setColor(ChatColor.LIGHT_PURPLE);
-									p.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
-									return;
-						        }
-						   }.runTaskLater(Main.instance, 800L);
-						}
-					}
-					//Blink
-					else if(offHand!=null && offHand.getType().equals(Material.WATCH) && offHand.getItemMeta().getLore()!=null && offHand.getItemMeta().getLore().contains(ChatColor.GRAY+"Was there ever any doubt?")) {
-						int dmg = LastDamageRunner.timeSinceLastDamage(p);
-						if(dmg<=4) {
-							TextComponent msg = new TextComponent();
-							msg.setText("You have recently taken damage and must wait another "+(4-dmg)+" seconds");
-							msg.setColor(ChatColor.AQUA);
-							p.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
-							return;
-						}
-						Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+p.getName()+" blink");
-						if(!cool1.getOrDefault(p, false)) {
-							event.setCancelled(true);
-							cool1.put(p, true);
-							new BukkitRunnable(){
-						        @Override
-						        public void run(){
-						        	cool1.remove(p);
-						        	TextComponent msg = new TextComponent();
-									msg.setText("Blink recharged!");
-									msg.setColor(ChatColor.LIGHT_PURPLE);
-									p.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
-									return;
-						        }
-						   }.runTaskLater(Main.instance, 140L);
+						else {
+							int dmg = RunnableLastDamage.timeSinceLastDamage(p);
+							if(dmg<=4) {
+								TextComponent msg = new TextComponent();
+								msg.setText("You have recently taken damage and must wait another "+(4-dmg)+" seconds");
+								msg.setColor(ChatColor.AQUA);
+								p.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+								return;
+							}
+							Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+p.getName()+" blink");
+							if(!cool1.getOrDefault(p, false)) {
+								event.setCancelled(true);
+								cool1.put(p, true);
+								new BukkitRunnable(){
+							        @Override
+							        public void run(){
+							        	cool1.remove(p);
+							        	TextComponent msg = new TextComponent();
+										msg.setText("Blink recharged!");
+										msg.setColor(ChatColor.LIGHT_PURPLE);
+										p.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+										return;
+							        }
+							   }.runTaskLater(Main.instance, 140L);
+							}
 						}
 					}
 				}
@@ -228,10 +235,9 @@ public class ListenerSubclass implements Listener{
 			if(sub==1 && Main.scoreboard.getObjective("damage").getScore(p.getName()).getScore() >=1500) {
 				ItemStack drop = new ItemStack(Material.BLAZE_POWDER);
 				ItemMeta met = drop.getItemMeta();
-				met.setDisplayName(ChatColor.DARK_RED + "BOOM TIME");
+				met.setDisplayName(ChatColor.RED+"BARBARIAN, "+ChatColor.DARK_RED+"RAGE");
 				ArrayList<String> lst = new ArrayList<String>();
-				lst.add(ChatColor.RED+"RIGHT CLICK TO ACTIVATE");
-				lst.add(ChatColor.RED+"BARBARIAN "+ChatColor.DARK_RED+"RAGE");
+				lst.add(ChatColor.DARK_RED + "GRRRAAAAGHHH");
 				met.setLore(lst);
 				met.addEnchant(Enchantment.BINDING_CURSE, 1, false);
 				met.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -257,7 +263,7 @@ public class ListenerSubclass implements Listener{
 			Player p = (Player)event.getEntity();
 			
 			if(event.getCause()!=DamageCause.FALL)
-				LastDamageRunner.startCounter(p);
+				RunnableLastDamage.startCounter(p);
 			
 			int sub = Main.scoreboard.getObjective("subclass").getScore(p.getName()).getScore();
 			//Angels
@@ -420,7 +426,7 @@ public class ListenerSubclass implements Listener{
 				if(Main.beacons.containsKey(p.getUniqueId())) {
 					if(p.getWorld().getBlockAt(Main.beacons.get(p.getUniqueId())).getType().equals(Material.END_GATEWAY)) {
 						if(p.getWorld().getHighestBlockYAt(event.getBlockPlaced().getLocation())-1<=event.getBlockPlaced().getLocation().getY()) {
-							int dmg = LastDamageRunner.timeSinceLastDamage(p);
+							int dmg = RunnableLastDamage.timeSinceLastDamage(p);
 							if(dmg<10) {
 								TextComponent msg = new TextComponent();
 								msg.setText("You have recently taken damage and must wait another "+(10-dmg)+" seconds");
@@ -613,19 +619,9 @@ public class ListenerSubclass implements Listener{
 			}
 		}
 	}
-	public static ItemStack barbarianBone(String name) {
-		ItemStack bone = new ItemStack(Material.BONE);
-		ItemMeta met = bone.getItemMeta();
-		met.setDisplayName(name+"'S BONE");
-		ArrayList<String> lore = new ArrayList<String>();
-		lore.add("IT TASTES DELICIOUS");
-		met.setLore(lore);
-		bone.setItemMeta(met);
-		return bone;
-	}
 	//ARCANE BOWMEN------------------------------------------------------------------------------------------------------------------------------------
 	@EventHandler
-	public void projectileHit(EntityShootBowEvent event) {
+	public void shootBow(EntityShootBowEvent event) {
 		if(event.getEntity() instanceof Player) {// && event.getBow().getItemMeta().getLore()!=null && event.getBow().getItemMeta().getLore().contains("blah")) {
 			Player p = (Player)event.getEntity();
 			if(Main.scoreboard.getObjective("subclass").getScore(p.getName()).getScore()==6) {

@@ -225,7 +225,7 @@ public class Spells{
 			case"skyfall":{
 				if(mag>=120) {
 					player.chat(ChatColor.GRAY+ChatColor.ITALIC.toString()+"SKYFALL!");
-					player.sendMessage("This spell is currently unimplemented!");
+					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" skyfall");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-120);
 				}
 				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
@@ -271,7 +271,7 @@ public class Spells{
 			Main.leftHands.remove(player.getUniqueId());
 		}
 		
-		RegenRunner.mageRegen(player);
+		RunnableRegen.mageRegen(player);
 	}
 	/**
 	 * @param spell is the string that's being checked

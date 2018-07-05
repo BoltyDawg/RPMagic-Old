@@ -54,11 +54,25 @@ public class CommandSubclass implements CommandExecutor {
 						p.sendMessage(ChatColor.DARK_PURPLE+"YOUR MUSCLES BECOME SO LARGE THAT YOUR ARMOR POPS OFF");
 				}
 				new Nick(p).set(Main.getName(p).toUpperCase());
-				p.getInventory().setArmorContents(new ItemStack[] {null,null,null,ListenerSubclass.barbarianBone(Main.getName(p))});
+				ItemStack bone = new ItemStack(Material.BONE);
+				ItemMeta met = bone.getItemMeta();
+				met.setDisplayName(Main.getName(p)+" FIRST BONE");
+				ArrayList<String> lore = new ArrayList<String>();
+				lore.add("IT TASTE LIKE MOTHER");
+				met.setLore(lore);
+				bone.setItemMeta(met);
+				p.getInventory().setArmorContents(new ItemStack[] {null,null,null,bone});
+				for(ItemStack s : p.getInventory().getContents()) {
+					if(s!=null && s.getType()==Material.BOOK_AND_QUILL) {
+						String display = s.getItemMeta().getDisplayName();
+						if(display.equalsIgnoreCase(Main.getName(p)+"'s Journal"))
+							s.getItemMeta().setDisplayName(display.toUpperCase());
+					}
+				}
 				p.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(40);
 				p.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).setBaseValue(8);
 				p.setHealth(40);
-				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"mmoedit "+p.getName()+" Unarmed 150");
+				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"mmoedit "+p.getName()+" Unarmed 100");
 				
 				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+p.getName()+" parent add barbarian");
 				Main.scoreboard.getObjective("subclass").getScore(p.getName()).setScore(1);
