@@ -60,3 +60,8 @@ commands:
     usage: /getkey
     permission: rpm.default
     permission-message: You don't have the rpm.default permission.
+  role:
+    description: set a player's role
+    usage: /subclass <player> <role>
+    permission: rpm.admin
+    permission-message: You don't have the rpm.admin permission.

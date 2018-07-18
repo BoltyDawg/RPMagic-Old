@@ -7,8 +7,8 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard;
-import org.anjocaido.groupmanager.GroupManager;
 
 import io.loyloy.nicky.Nick;
 import java.io.File;
@@ -39,7 +39,6 @@ import org.bukkit.plugin.Plugin;
  */
 public class Main extends JavaPlugin{
 	public static Main instance;
-	public static GroupManager perms;
 	public static boolean nick;
 	public static final int BASE_STAM = 100;
 	public static final int BASE_MAG = 100;
@@ -91,6 +90,7 @@ public class Main extends JavaPlugin{
 		this.getCommand("subclass").setExecutor(new CommandSubclass());
 		this.getCommand("spellinfo").setExecutor(new CommandSpellInfo());
 		this.getCommand("getkey").setExecutor(new CommandKey());
+		this.getCommand("role").setExecutor(new CommandRole());
 		
 		File f = new File("plugins\\RPMagic");
 		f.mkdirs();
@@ -119,6 +119,15 @@ public class Main extends JavaPlugin{
 		SerUtil.loadValues();
 		
 		instance.getLogger().info("RPMagic version " + instance.getDescription().getVersion() + " is now enabled!");
+		
+		new BukkitRunnable(){
+	        @Override
+	        public void run(){
+	        	for(Player player : Bukkit.getOnlinePlayers()) {
+	        		player.setCompassTarget(player.getLocation().add(0,0,-100000));
+	        	}
+	        }
+	   }.runTaskTimer(this, 600, 600);
 	}
 	@Override
 	public void onDisable() {

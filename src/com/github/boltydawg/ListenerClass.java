@@ -3,6 +3,7 @@
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
@@ -22,8 +23,10 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Chest;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.entity.EntityType;
@@ -36,6 +39,7 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
+
 
 /**
  * This listener does tasks related to the 3 main classes, along with
@@ -76,16 +80,24 @@ public class ListenerClass implements Listener {
 //		met.setLore(t);
 //		item.setItemMeta(met);
 		if(air || block) {
-			//Makes it so only enchanters can enchant
+			//Makes it so only enchanters and mages can enchant, and 
 			if(block && Material.ENCHANTMENT_TABLE.equals(event.getClickedBlock().getType())) {
 				//TODO update the message and make it work for mages, not a role check
-				if(Main.scoreboard.getObjective("role").getScore(player.getName()).getScore()!=1) {
-//						TextComponent msg = new TextComponent();
-//						msg.setText();
-//						msg.setColor();
-//						player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
-					
-					player.sendMessage(ChatColor.RED+"The lack the required knowledge to make any use of this table");
+				if(Main.scoreboard.getObjective("role").getScore(player.getName()).getScore()==2) {
+					if(item.getEnchantments()!=null && item.getEnchantments().size()==1 && item.containsEnchantment(Enchantment.VANISHING_CURSE)) {
+						if(Experience.getExp(player)>=100) {
+							item.removeEnchantment(Enchantment.VANISHING_CURSE);
+							Experience.changeExp(player, -100);
+							player.sendMessage(ChatColor.GREEN+"You successfully removed the vanishing curse!");
+							player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 3.0F, 1F);
+						}
+						else
+							player.sendMessage(ChatColor.RED+"You need more XP to remove this curse");
+						event.setCancelled(true);
+					}
+				}
+				else if(Main.scoreboard.getObjective("class").getScore(player.getName()).getScore()!=2) {
+					player.sendMessage(ChatColor.RED+"You can't read the weird floaty book thingy");
 					event.setCancelled(true);
 				}
 			}
@@ -304,6 +316,10 @@ public class ListenerClass implements Listener {
 	@EventHandler
 	public void onPlayerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
+		player.setCompassTarget(player.getLocation().add(0,0,-100000));
+		
+		Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"f config playersWhoBypassAllProtection add "+player.getName());
+		
 		String nam = Main.getName(player);
 		if(nam!=player.getName()) event.setJoinMessage(ChatColor.GOLD+nam+ChatColor.YELLOW+" joined the game.");
 		int score = Main.scoreboard.getObjective("class").getScore(player.getName()).getScore();
@@ -346,10 +362,10 @@ public class ListenerClass implements Listener {
 	}
 	@EventHandler
 	public void onPlayerLeave(PlayerQuitEvent event) {
-		Player p = event.getPlayer();
-		Main.attributes.remove(p);
-		draining.remove(p);
-		RunnableRegen.regenerates.remove(p);
+		Player player = event.getPlayer();
+		Main.attributes.remove(player);
+		draining.remove(player);
+		RunnableRegen.regenerates.remove(player);
 	}
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
 	/**
@@ -410,13 +426,13 @@ public class ListenerClass implements Listener {
 	//Other, non-class related things
 	@EventHandler
 	public void onPlayerEditBookEvent(PlayerEditBookEvent event) {
-		if(event.isSigning()&&Main.nick) {
-			Player p = event.getPlayer();
+		if(event.isSigning()) {
+			Player player = event.getPlayer();
 			BookMeta met = event.getNewBookMeta();
-			String str = Main.getName(p);
+			String str = Main.getName(player);
 			met.setAuthor(str);
 			event.setNewBookMeta(met);
-			p.sendMessage(ChatColor.GRAY + "<DISEMBODIED VOICE> Don't worry, I fixed the Author of that book for you ;)");
+			player.sendMessage(ChatColor.GRAY + "<DISEMBODIED VOICE> Don't worry, I fixed the Author of that book for you ;)");
 		}
 		else {
 			BookMeta prev = event.getPreviousBookMeta();
@@ -426,30 +442,29 @@ public class ListenerClass implements Listener {
 	}
 	@EventHandler
 	public void onPlayerDeathEvent(PlayerDeathEvent event) {
-		Player p = event.getEntity().getPlayer();
-		int alive = Main.scoreboard.getObjective("alive").getScore(p.getName()).getScore();
-		if(p.getInventory().contains(Material.TOTEM)) {
+		Player player = event.getEntity().getPlayer();
+		int alive = Main.scoreboard.getObjective("alive").getScore(player.getName()).getScore();
+		if(player.getInventory().contains(Material.TOTEM)) {
 			//TODO set their bed location to the hospital
-			p.spigot().respawn();
+			player.spigot().respawn();
 			return;
 		}
 		if(alive==1) {
-			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"skillreset "+p.getName()+" all");
-			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+p.getName()+" clear");
-			Main.scoreboard.resetScores(p.getName());
+			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"skillreset "+player.getName()+" all");
+			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+player.getName()+" clear");
 			
-			String n = Main.getName(p);
+			String n = Main.getName(player);
 			String dm = event.getDeathMessage();
 			event.setDeathMessage("");
-			dm=dm.replaceAll(p.getName(), n);
-			for(Player pl : p.getWorld().getPlayers()) {
+			dm=dm.replaceAll(player.getName(), n);
+			for(Player pl : player.getWorld().getPlayers()) {
 				if(dm.contains(pl.getName())) {
 					dm=dm.replaceAll(pl.getName(), Main.getName(pl));
 				}
 			}
 			ItemStack skull = new ItemStack(Material.SKULL_ITEM,1,(short)3);
 			SkullMeta met = (SkullMeta)skull.getItemMeta();
-			met.setOwningPlayer(p);
+			met.setOwningPlayer(player);
 			met.setDisplayName(ChatColor.DARK_RED+n+".");
 			List<String> lore = new ArrayList<String>();
 			String[] msg = dm.replaceAll(n+" ", "").trim().split(" ");
@@ -469,16 +484,22 @@ public class ListenerClass implements Listener {
 				lore.add(ChatColor.GRAY+str);
 			met.setLore(lore);
 			skull.setItemMeta(met);
-			p.getWorld().dropItem(p.getLocation(), skull);
+			player.getWorld().dropItem(player.getLocation(), skull);
 			
-			for(Player pl : p.getWorld().getPlayers()) {
-				if(pl.getLocation().distance(p.getLocation())<=100) {
+			for(Player pl : player.getWorld().getPlayers()) {
+				if(pl.getLocation().distance(player.getLocation())<=100) {
 					pl.sendMessage(dm);
 				}
 			}
+			
+			if(Main.scoreboard.getObjective("role").getScore(player.getName()).getScore()==3) {
+				
+			}
+			
+			Main.scoreboard.resetScores(player.getName());
 		}
 		else if(alive==2) {
-			Main.scoreboard.getObjective("alive").getScore(p.getName()).setScore(1);
+			Main.scoreboard.getObjective("alive").getScore(player.getName()).setScore(1);
 		}
 	}
 	@EventHandler
@@ -529,10 +550,20 @@ public class ListenerClass implements Listener {
 			Chest chest = ((Chest)event.getBlock().getState());
 			if(chest.isLocked()) {
 				ItemStack main = event.getPlayer().getInventory().getItemInMainHand();
-				if(main!=null && main.getType()!=Material.AIR && main.getItemMeta().getDisplayName().equals(chest.getLock()))
+				if(main!=null && main.getType()!=Material.AIR && main.getItemMeta().getDisplayName()!=null && main.getItemMeta().getDisplayName().equals(chest.getLock()))
 					return;
 				event.setCancelled(true);
 				event.getPlayer().sendMessage(ChatColor.RED+"You can't break a locked chest without using its key!\n"+ChatColor.GRAY+"(By hand, that is...)");
+			}
+		}
+	}
+	@EventHandler
+	public void enchantItem(EnchantItemEvent event){
+		if(Main.scoreboard.getObjective("role").getScore(event.getEnchanter().getName()).getScore()!=2) {
+			if(event.getItem().getItemMeta().getLore()==null || !event.getItem().getItemMeta().getLore().contains("lux in tenebris")) {
+				event.setCancelled(true);
+				event.getEnchanter().getOpenInventory().close();
+				event.getEnchanter().sendMessage(ChatColor.AQUA+"You only know how to enchant your Mage armors!");
 			}
 		}
 	}

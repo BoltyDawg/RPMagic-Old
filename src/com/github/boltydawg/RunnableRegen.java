@@ -65,7 +65,7 @@ public class RunnableRegen extends BukkitRunnable{
 		RunnableRegen runner = new RunnableRegen(player);
 		regenerates.put(player, runner);
 		
-		runner.runTaskTimer(Main.instance, 80L, 6L);
+		runner.runTaskTimer(Main.instance, 90L, 8L);
 	}
 	
 	public static void cancelRegen(Player player) {
