@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 
@@ -22,7 +23,7 @@ public class Spells{
 	/**
 	 * a list of all currently implemented spells
 	 */
-	public static final String[] ALL_SPELLS = new String[] {"beam","blessing","bomb","earthquake","entangle","fireball","flashbang","fury","ghast","grenade","heal","homing","lift","meteor","nuke","platform","shock","shower","singularity","skyfall","soothe","test","time","tornado","wave"};
+	public static final String[] ALL_SPELLS = new String[] {"beam","blessing","bomb","earthquake","entangle","fireball","flashbang","fury","ghast","grenade","heal","homing","lift","meteor","nuke","platform","shock","shower","singularity","skyfall","soothe","test","time","tornado","vallone","wave"};
 	
 	private static HashMap<Player,Boolean> cool = new HashMap<Player,Boolean>();
 	
@@ -37,6 +38,7 @@ public class Spells{
 		if(spell!="beam" && !Main.mages.get(player.getUniqueId()).contains(spell)){player.sendMessage(ChatColor.GRAY+"You haven't learned this spell!");return;}
 		
 		int mag = Main.scoreboard.getObjective("Magicka").getScore(player.getName()).getScore();
+		boolean enoughMagicka = true;
 		switch(spell) {
 			case"beam":{
 				if(mag>=5) {
@@ -54,7 +56,7 @@ public class Spells{
 					else
 						return;
 				}
-				else {player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!"); return;}
+				else enoughMagicka = false;
 				break;
 			}
 			case"blessing":{
@@ -63,7 +65,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" blessing");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-90);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"bomb":{
@@ -71,7 +73,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" bomb");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-60);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case "time":{
@@ -86,7 +88,7 @@ public class Spells{
 					}
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-100);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"earthquake":{
@@ -95,7 +97,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" earthquake");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-33);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"entangle":{
@@ -103,7 +105,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" entangle");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-33);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"fireball":{
@@ -111,7 +113,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" fireball");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-15);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"flashbang":{
@@ -119,7 +121,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" flashbang");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-15);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"fury":{
@@ -127,7 +129,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" fury");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-20);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"ghast":{
@@ -135,7 +137,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" ghast");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-20);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"grenade":{
@@ -143,7 +145,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" grenade");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-25);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"heal":{
@@ -151,7 +153,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" heal");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-40);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"homing":{
@@ -159,15 +161,15 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" homing");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-15);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
-			case"lift":{//TODO make our own version?
+			case"lift":{
 				if(mag>=15) {
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" lift");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-15);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"meteor":{
@@ -176,7 +178,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" meteor");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-40);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"nuke":{
@@ -185,7 +187,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" nuke");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-100);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case "platform":{
@@ -193,7 +195,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" platform");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-5);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"shock":{
@@ -201,7 +203,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" shock");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-20);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"shower":{
@@ -210,7 +212,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" shower");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-75);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"singularity":{
@@ -219,7 +221,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" singularity");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-75);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"skyfall":{
@@ -228,16 +230,15 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" skyfall");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-120);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"soothe":{
 				if(mag>=33) {
-					//TODO update to 1.13
-					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"effect "+player.getName()+" regeneration 10 1");
+					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"effect give "+player.getName()+" regeneration 10 1");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-33);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"tornado":{
@@ -245,7 +246,7 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" tornado");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-33);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"wave":{
@@ -253,11 +254,12 @@ public class Spells{
 					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" wave");
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-25);
 				}
-				else player.sendMessage(ChatColor.DARK_BLUE+"You don't have enough Magicka!");
+				else enoughMagicka = false;
 				break;
 			}
 			case"vallone":{
-				
+				player.sendMessage(ChatColor.GRAY+"This spell is still unimplemented");
+				break;
 			}
 			case"test":{
 				player.chat(ChatColor.GRAY+ChatColor.ITALIC.toString()+"Testistimus!");
@@ -270,17 +272,23 @@ public class Spells{
 			player.getInventory().setItemInOffHand(Main.leftHands.get(player.getUniqueId()));
 			Main.leftHands.remove(player.getUniqueId());
 		}
-		
-		RunnableRegen.mageRegen(player);
+		if(!enoughMagicka){
+			TextComponent msg = new TextComponent();
+			msg.setText("You don't have enough Magicka!");
+			msg.setColor(ChatColor.DARK_BLUE);
+			player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+		}
+		//This else statement makes it so that the regen process isn't cancelled if you didn't have enough Magicka to cast the spell
+		else 
+			RunnableRegen.mageRegen(player);
 	}
 	/**
 	 * @param spell is the string that's being checked
 	 * @return true if the string is a valid spell, false otherwise
 	 */
 	public static boolean isValid(String spell) {
-		//TODO: change this to be if(ALL_SPELLS.contains(spell))
-		for(int i=0;i<ALL_SPELLS.length;i++) {
-			if(ALL_SPELLS[i].equals(spell)) return true;
+		for(String s: ALL_SPELLS) {
+			if(s.equals(spell)) return true;
 		}
 		return false;
 	}
@@ -316,13 +324,13 @@ public class Spells{
 	public static ChatColor getColor(String spell) {
 		switch(spell) {
 			//Common tier
-			case "fireball": return ChatColor.RED;
-			case "flashbang": return ChatColor.RED;
-			case "ghast": return ChatColor.RED;
-			case "soothe": return ChatColor.RED;
-			case "beam": return ChatColor.RED;
-			case "platform": return ChatColor.RED;
-			case "homing": return ChatColor.RED;
+			case "fireball": return ChatColor.GRAY;
+			case "flashbang": return ChatColor.GRAY;
+			case "ghast": return ChatColor.GRAY;
+			case "soothe": return ChatColor.GRAY;
+			case "beam": return ChatColor.GRAY;
+			case "platform": return ChatColor.GRAY;
+			case "homing": return ChatColor.GRAY;
 			//Mid tier
 			case "shock": return ChatColor.GREEN;
 			case "fury": return ChatColor.GREEN;
@@ -332,12 +340,12 @@ public class Spells{
 			case "tornado": return ChatColor.GREEN;
 			case "bomb": return ChatColor.GREEN;
 			//High tier
-			case "earthquake": return ChatColor.DARK_BLUE;
-			case "entangle": return ChatColor.DARK_BLUE;
-			case "heal": return ChatColor.DARK_BLUE;
-			case "meteor": return ChatColor.DARK_BLUE;
-			case "time": return ChatColor.DARK_BLUE;
-			case"shower": return ChatColor.DARK_BLUE;
+			case "earthquake": return ChatColor.DARK_AQUA;
+			case "entangle": return ChatColor.DARK_AQUA;
+			case "heal": return ChatColor.DARK_AQUA;
+			case "meteor": return ChatColor.DARK_AQUA;
+			case "time": return ChatColor.DARK_AQUA;
+			case"shower": return ChatColor.DARK_AQUA;
 			//Exotic
 			case "blessing": return ChatColor.LIGHT_PURPLE;
 			case "nuke": return ChatColor.LIGHT_PURPLE;
@@ -346,7 +354,7 @@ public class Spells{
 			//Mega rare
 			case"vallone": return ChatColor.GOLD;
 			case "test": return ChatColor.GOLD;
-			default: return ChatColor.BLACK;
+			default: return ChatColor.MAGIC;
 		}
 	}
 }

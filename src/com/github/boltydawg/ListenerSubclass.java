@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import org.bukkit.block.ShulkerBox;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -14,7 +15,9 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Damageable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.TippedArrow;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -27,9 +30,9 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityPortalEnterEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
@@ -38,10 +41,12 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scoreboard.Score;
 import org.spigotmc.event.entity.EntityDismountEvent;
 import org.spigotmc.event.entity.EntityMountEvent;
 
@@ -51,8 +56,8 @@ import net.md_5.bungee.api.chat.TextComponent;
 
 /**
  * 1 Barbarian
- * 2 Knight TODO Tent
- * 3 Hoplite
+ * 2 Knight
+ * 3 Marine
  * 4 Tank
  * 5 Angel
  * 6 Arcane Bowman
@@ -68,7 +73,7 @@ public class ListenerSubclass implements Listener{
 	private HashMap<Player,Location> tele = new HashMap<Player,Location>();
 	
 	
-	@EventHandler
+	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerInteractEvent(PlayerInteractEvent event) {
 		boolean block = event.getAction().equals(Action.RIGHT_CLICK_BLOCK);
 		boolean air = event.getAction().equals(Action.RIGHT_CLICK_AIR);
@@ -86,6 +91,7 @@ public class ListenerSubclass implements Listener{
 						player.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE,260,2));
 						player.addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING,260,7));
 						Main.scoreboard.getObjective("damage").getScore(player.getName()).setScore(0);
+						Main.rageBars.get(player).setProgress(0);
 						player.getInventory().removeItem(item);
 						new BukkitRunnable(){
 					        @Override
@@ -102,6 +108,7 @@ public class ListenerSubclass implements Listener{
 						player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
 						player.damage(1);
 					}
+					event.setCancelled(true);
 				}
 				//Barbarians equipping bone
 				else if(sub==1 && item.getType().equals(Material.BONE) && item.getItemMeta().getLore()!=null) {
@@ -113,9 +120,10 @@ public class ListenerSubclass implements Listener{
 					bone.setAmount(1);
 					player.getInventory().setHelmet(bone);
 					item.setAmount(item.getAmount()-1);
+					event.setCancelled(true);
 				}
 				//Tank shield
-				else if(sub==4 && event.getHand().equals(EquipmentSlot.HAND) && item.getType().equals(Material.SHIELD) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains("An Unbreakable Wall")){//TODO, make sure this lore is right
+				else if(sub==4 && event.getHand().equals(EquipmentSlot.HAND) && item.getType().equals(Material.SHIELD) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains("An Unbreakable Wall")){
 					short d = item.getDurability();
 					if(d<=294 && !player.isBlocking()) {
 						Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" pull");
@@ -140,7 +148,7 @@ public class ListenerSubclass implements Listener{
 				//Assassins
 				else if(sub==7) {
 					//Cloak
-					if(item!=null && item.getType().equals(Material.WATCH) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains(ChatColor.GRAY+"Was there ever any doubt?")) { //Make the lore in dark red?
+					if(item!=null && item.getType().equals(Material.CLOCK) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains(ChatColor.GRAY+"Was there ever any doubt?")) { //Make the lore in dark red?
 						if(event.getHand().equals(EquipmentSlot.HAND)) {
 							if(player.hasPotionEffect(PotionEffectType.INVISIBILITY) && player.hasPotionEffect(PotionEffectType.INCREASE_DAMAGE))
 								return;
@@ -196,7 +204,11 @@ public class ListenerSubclass implements Listener{
 							   }.runTaskLater(Main.instance, 140L);
 							}
 						}
+						event.setCancelled(true);
 					}
+				}
+				else if(sub==3 && event.getHand().equals(EquipmentSlot.OFF_HAND) && item.getType().equals(Material.TRIDENT) && player.isSneaking()) {
+					RunnableMarine.callToArms(player);
 				}
 //				//Angel Rocket
 //				else if(sub==5) {
@@ -227,36 +239,50 @@ public class ListenerSubclass implements Listener{
 			}
 		}
 	}
-	@EventHandler
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onEntityDamageByEntityEvent(EntityDamageByEntityEvent event) {
 		if(event.getDamager() instanceof Player) {
 			Player player = ((Player)event.getDamager());
 			int sub = Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore();
-			//Barbarian Rage
-			if(sub==1 && Main.scoreboard.getObjective("damage").getScore(player.getName()).getScore() >=1500) {
-				ItemStack drop = new ItemStack(Material.BLAZE_POWDER);
-				ItemMeta met = drop.getItemMeta();
-				met.setDisplayName(ChatColor.RED+"BARBARIAN, "+ChatColor.DARK_RED+"RAGE");
-				ArrayList<String> lst = new ArrayList<String>();
-				lst.add(ChatColor.DARK_RED + "GRRRAAAAGHHH");
-				met.setLore(lst);
-				met.addEnchant(Enchantment.BINDING_CURSE, 1, false);
-				met.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-				drop.setItemMeta(met);
-				if(!player.getInventory().contains(drop))
-					player.getInventory().addItem(drop);
-				//hide scoreboard
-				//TODO: else: update progress to rage bar
-			}
-			//Knight Saturation
-			else if(sub==2) {
-				int f = player.getFoodLevel();
-				if(f<19 && Main.scoreboard.getObjective("damage").getScore(player.getName()).getScore()>=200) {
-					player.setFoodLevel(f+1);
-					Main.scoreboard.getObjective("damage").getScore(player.getName()).setScore(0);
+			if(sub==1 || sub==2) {
+				int dmg;
+				if(player.getInventory().getItemInMainHand()==null || player.getInventory().getItemInMainHand().getType().equals(Material.AIR))
+					dmg = (int)Math.round(event.getFinalDamage()*1.8 + Main.scoreboard.getObjective("damage").getScore(player.getName()).getScore());
+				else
+					dmg= (int)Math.round(event.getFinalDamage() + Main.scoreboard.getObjective("damage").getScore(player.getName()).getScore());
+				Main.scoreboard.getObjective("damage").getScore(player.getName()).setScore(dmg);
+				//Barbarian Rage
+				if(sub==1) {
+					if(dmg>=Main.RAGE) {
+						giveRageDrop(player);
+						Main.rageBars.get(player).setProgress(1.0);
+					}
+					else
+						Main.rageBars.get(player).setProgress((double)dmg/Main.RAGE);
+				}
+				//Knight Saturation
+				else if(sub==2) {
+					int f = player.getFoodLevel();
+					if(f<19 && dmg>=200) {
+						player.setFoodLevel(f+1);
+						Main.scoreboard.getObjective("damage").getScore(player.getName()).setScore(0);
+					}
 				}
 			}
 		}
+	}
+	public static void giveRageDrop(Player player) {
+		ItemStack drop = new ItemStack(Material.BLAZE_POWDER);
+		ItemMeta met = drop.getItemMeta();
+		met.setDisplayName(ChatColor.RED+"BARBARIAN, "+ChatColor.DARK_RED+"RAGE");
+		ArrayList<String> lst = new ArrayList<String>();
+		lst.add(ChatColor.DARK_RED + "GRRRAAAAGHHH");
+		met.setLore(lst);
+		met.addEnchant(Enchantment.BINDING_CURSE, 1, false);
+		met.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+		drop.setItemMeta(met);
+		if(!player.getInventory().contains(drop))
+			player.getInventory().addItem(drop);
 	}
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onEntityDamageEvent(EntityDamageEvent event) {
@@ -309,15 +335,22 @@ public class ListenerSubclass implements Listener{
 			}
 			//Barbarians
 			else if(sub==1) {
-				Score s = Main.scoreboard.getObjective("damage").getScore(player.getName());
-				s.setScore(((int)event.getDamage()+s.getScore()));
+				int rage = (int)Math.round(event.getDamage()+Main.scoreboard.getObjective("damage").getScore(player.getName()).getScore());
+				if(rage>=Main.RAGE) {
+					Main.scoreboard.getObjective("damage").getScore(player.getName()).setScore(rage);
+					Main.rageBars.get(player).setProgress(1.0);
+					giveRageDrop(player);
+				}
+				else {
+					Main.scoreboard.getObjective("damage").getScore(player.getName()).setScore(rage);
+					Main.rageBars.get(player).setProgress((double)rage/Main.RAGE);
+				}
 			}
 			//Tank shield regen
 			else if(sub==4) {
 				ItemStack shield = player.getInventory().getItemInOffHand();
-				//TODO: make sure the shield lore is right, and make sure the amount of durability we subtract is accurate
 				if(shield!=null && shield.getType().equals(Material.SHIELD) && shield.getItemMeta().getLore()!=null && shield.getItemMeta().getLore().contains("An Unbreakable Wall")) {
-					short s = (short)(shield.getDurability()-(1.5*event.getDamage()));
+					short s = (short)(shield.getDurability()-(2*event.getDamage()));
 					if(s>=0)
 						shield.setDurability(s);
 					else
@@ -333,6 +366,19 @@ public class ListenerSubclass implements Listener{
 			event.getPlayer().setGliding(false);
 	}
 	//Knights and Scouts---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	private static ItemStack knightJavelin() {
+		ItemStack jav = new ItemStack(Material.TRIDENT);
+		ItemMeta met = jav.getItemMeta();
+		met.addEnchant(Enchantment.LOYALTY, 1, true);
+		met.addEnchant(Enchantment.VANISHING_CURSE,1,true);
+		met.setDisplayName("Knight Javelin");
+		met.setUnbreakable(true);
+		ArrayList<String> lore = new ArrayList<String>();
+		lore.add(ChatColor.DARK_RED+"Fear cuts deeper than swords");
+		met.setLore(lore);
+		jav.setItemMeta(met);
+		return jav;
+	}
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onCreatureSpawn(CreatureSpawnEvent event) {
 		if(event.getEntityType().equals(EntityType.HORSE) && event.getSpawnReason().equals(CreatureSpawnEvent.SpawnReason.SPAWNER_EGG)) {
@@ -359,44 +405,16 @@ public class ListenerSubclass implements Listener{
 		}
 	}
 	@EventHandler
-	public void onClickEntity(PlayerInteractEntityEvent event) {
-		if(event.getRightClicked().getType().equals(EntityType.HORSE) && event.getRightClicked().getScoreboardTags()!=null) {
-			Player player = event.getPlayer();
-			if(event.getRightClicked().getScoreboardTags().contains(Main.getName(player)+" elybris") && (player.getInventory().getItemInMainHand().equals(collectEgg("Elybris")) || player.getInventory().getItemInOffHand().equals(collectEgg("Elybris")))) {
-				if(Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==8) {
-					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" capture");
-					player.getInventory().remove(collectEgg("Elybris"));
-					event.setCancelled(true);
-				}
-				else {
-					TextComponent msg = new TextComponent();
-					msg.setText("This is not your horse!");
-					msg.setColor(ChatColor.YELLOW);
-					player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
-				}
-			}
-			else if(event.getRightClicked().getScoreboardTags().contains(Main.getName(player)+" steed") && (player.getInventory().getItemInMainHand().equals(collectEgg("Steed")) || player.getInventory().getItemInOffHand().equals(collectEgg("Steed")))) {
-				if(Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==2) {
-					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" capture");
-					player.getInventory().remove(collectEgg("Steed"));
-					event.setCancelled(true);
-				}
-				else {
-					TextComponent msg = new TextComponent();
-					msg.setText("This is not your horse!");
-					msg.setColor(ChatColor.YELLOW);
-					player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
-				}
-			}
-		}
-		else if(event.getRightClicked() instanceof Player) {
-			((Player)event.getRightClicked()).addPassenger(event.getPlayer());
-		}
-	}
-	@EventHandler
 	public void onBlockPlaceEvent(BlockPlaceEvent event) {
 		Player player = event.getPlayer();
 		Material mat = event.getBlockPlaced().getType();
+		if(mat.equals(Material.PLAYER_HEAD) || mat.equals(Material.PLAYER_WALL_HEAD)) {
+			event.setCancelled(true);
+			TextComponent msg = new TextComponent();
+			msg.setText("If you placed a player head, it would lose it's data!");
+			msg.setColor(ChatColor.YELLOW);
+			player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+		}
 		if(Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==8) {
 			if(mat.equals(Material.SEA_LANTERN) && (player.getInventory().getItemInMainHand().containsEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL) || player.getInventory().getItemInOffHand().containsEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL))) {
 				if(player.getWorld().getHighestBlockYAt(event.getBlockPlaced().getLocation())-1<=event.getBlockPlaced().getLocation().getY()) {
@@ -438,7 +456,7 @@ public class ListenerSubclass implements Listener{
 							}
 							if(tele.containsKey(player))
 								tele.get(player).getBlock().breakNaturally();
-							event.getBlockPlaced().setType(Material.PORTAL);
+							event.getBlockPlaced().setType(Material.NETHER_PORTAL);
 							tele.put(player, event.getBlockPlaced().getLocation());
 							new BukkitRunnable(){
 						        @Override
@@ -511,8 +529,10 @@ public class ListenerSubclass implements Listener{
 			if(tele.containsValue(event.getLocation())) {
 				if(event.getLocation().equals(tele.get(player))) {
 					player.teleport(Main.beacons.get(player.getUniqueId()));
+					player.setCompassTarget(player.getLocation().add(0,0,-100000));
 					tele.get(player).getBlock().breakNaturally();
 					tele.remove(player);
+					player.setCompassTarget(player.getLocation().add(0,0,-100000));
 				}
 				else {
 					TextComponent msg = new TextComponent();
@@ -532,11 +552,50 @@ public class ListenerSubclass implements Listener{
 		}
 	}
 	@EventHandler
+	public void clickEntity(PlayerInteractEntityEvent event) {
+		if(event.getRightClicked().getType().equals(EntityType.HORSE)) {
+			Player player = event.getPlayer();
+			Entity horse = event.getRightClicked();
+			ItemStack main = player.getInventory().getItemInMainHand();
+			ItemStack off = player.getInventory().getItemInOffHand();
+			if(player.isSneaking()) {
+				if(main.equals(collectEgg("Steed")) || off.equals(collectEgg("Steed"))) {
+					if(horse.getScoreboardTags().contains(Main.getName(player)+" steed")) {
+						event.setCancelled(true);
+						Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" capture");
+						player.getInventory().remove(collectEgg("Steed"));
+					}
+					else {
+						event.setCancelled(true);
+						TextComponent msg = new TextComponent();
+						msg.setText("This is not your horse!");
+						msg.setColor(ChatColor.YELLOW);
+						player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+					}
+				}
+				else if(main.equals(collectEgg("Elybris")) || off.equals(collectEgg("Elybris"))) {
+					if(horse.getScoreboardTags().contains(Main.getName(player)+" elybris")) {
+						event.setCancelled(true);
+						Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" capture");
+						player.getInventory().remove(collectEgg("Elybris"));
+					}
+					else {
+						event.setCancelled(true);
+						TextComponent msg = new TextComponent();
+						msg.setText("This is not your horse!");
+						msg.setColor(ChatColor.YELLOW);
+						player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+					}
+				}
+			}
+		}
+	}
+	@EventHandler
 	public void onMountEvent(EntityMountEvent event) {
 		if(event.getEntity() instanceof Player && event.getMount().getType().equals(EntityType.HORSE)) {
 			Player player = ((Player)event.getEntity());
 			for(String s : event.getMount().getScoreboardTags()) {
-				if(s.contains( "steed")) {
+				if(s.contains(" steed")) {
 					if(!((Main.getName(player)+" steed").equals(s))) {
 						event.setCancelled(true);
 						player.sendMessage(ChatColor.YELLOW+"The horse thrusts you off, in recognition that you aren't its master!");
@@ -550,8 +609,7 @@ public class ListenerSubclass implements Listener{
 				}
 			}
 			if(event.getMount().getScoreboardTags().contains(Main.getName(player)+" steed") && Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==2 && player.getInventory().firstEmpty()!=-1) {
-				//TODO update this to 1.13
-				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"give "+player.getName()+" iron_hoe 1 0 {display:{Name:\"Knight Lance\",Lore:[\"Used on Horseback\"]},AttributeModifiers:[{AttributeName:\"generic.attackDamage\",Name:\"generic.attackDamage\",Amount:12,Operation:0,UUIDMost:210155,UUIDLeast:259571,Slot:\"mainhand\"},{AttributeName:\"generic.attackSpeed\",Name:\"generic.attackSpeed\",Amount:-3.5,Operation:0,UUIDMost:215044,UUIDLeast:421056,Slot:\"mainhand\"}],ench:[{id:71,lvl:1}], HideFlags:3,Unbreakable:1}");
+				player.getInventory().addItem(knightJavelin());
 			}
 		}
 	}
@@ -560,17 +618,44 @@ public class ListenerSubclass implements Listener{
 		if(event.getEntity() instanceof Player && event.getDismounted().getType().equals(EntityType.HORSE)) {
 			Player player = ((Player)event.getEntity());
 			if(event.getDismounted().getScoreboardTags().contains(Main.getName(player)+" steed") && Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==2) {
-				//TODO update this to 1.13
-				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"clear "+player.getName()+" iron_hoe 0 5 {display:{Name:\"Knight Lance\",Lore:[\"Used on Horseback\"]},AttributeModifiers:[{AttributeName:\"generic.attackDamage\",Name:\"generic.attackDamage\",Amount:12,Operation:0,UUIDMost:210155,UUIDLeast:259571,Slot:\"mainhand\"},{AttributeName:\"generic.attackSpeed\",Name:\"generic.attackSpeed\",Amount:-3.5,Operation:0,UUIDMost:215044,UUIDLeast:421056,Slot:\"mainhand\"}],ench:[{id:71,lvl:1}],HideFlags:3,Unbreakable:1}");
+				ItemStack knightJavelin = knightJavelin();
+				if(player.getInventory().contains(knightJavelin))
+					player.getInventory().remove(knightJavelin);
+				else {
+					new BukkitRunnable(){
+        		        @Override
+        		        public void run(){
+        		        	if(player.getInventory().contains(knightJavelin)) {
+        						player.getInventory().remove(knightJavelin);
+        						cancel();
+        						return;
+        		        	}
+        		        	else if(player.isInsideVehicle() || !player.isOnline()) {
+        		        		cancel();
+        		        		return;
+        		        	}
+        		        }
+        		   }.runTaskTimer(Main.instance, 2L, 2L);
+				}
 			}
+		}
+	}
+	@EventHandler
+	public void dropItem(PlayerDropItemEvent event) {
+		if(event.getItemDrop().getItemStack().equals(knightJavelin())) {
+			event.setCancelled(true);
 		}
 	}
 	
 	private ItemStack collectEgg(String horse) {
-		ItemStack egg = new ItemStack(Material.MONSTER_EGG);
+		ItemStack egg = new ItemStack(Material.POPPED_CHORUS_FRUIT);
 		ItemMeta met = egg.getItemMeta();
 		met.setDisplayName("Capture "+horse);
 		met.addEnchant(Enchantment.VANISHING_CURSE, 1, true);
+		met.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+		ArrayList<String> lore = new ArrayList<String>();
+		lore.add("Shift+right click your horse");
+		met.setLore(lore);
 		egg.setItemMeta(met);
 		return egg;
 	}
@@ -581,7 +666,7 @@ public class ListenerSubclass implements Listener{
 		//Barbarians eat food differently than regular players. They get buffs for eating raw meat, and can't eat cooked meat.
 		if(Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==1){
 			Material mat = event.getItem().getType();
-			if(mat.equals(Material.RAW_BEEF) || mat.equals(Material.PORK)) {
+			if(mat.equals(Material.BEEF) || mat.equals(Material.PORKCHOP)) {
 				int h = player.getFoodLevel()+8;
 				if(h>=20) {
 					player.setFoodLevel(20);
@@ -595,7 +680,7 @@ public class ListenerSubclass implements Listener{
 				player.addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING,320,2));
 				player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,320,0));
 			}
-			else if(mat.equals(Material.RAW_CHICKEN) || mat.equals(Material.MUTTON) || mat.equals(Material.RABBIT)) {
+			else if(mat.equals(Material.CHICKEN) || mat.equals(Material.MUTTON) || mat.equals(Material.RABBIT)) {
 				int h = player.getFoodLevel()+6;
 				if(h>=20) {
 					player.setFoodLevel(20);
@@ -609,7 +694,7 @@ public class ListenerSubclass implements Listener{
 				player.addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING,320,2));
 				player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,320,0));
 			}
-			else if(mat.equals(Material.COOKED_BEEF) || mat.equals(Material.COOKED_CHICKEN) || mat.equals(Material.COOKED_MUTTON) || mat.equals(Material.COOKED_RABBIT) || mat.equals(Material.GRILLED_PORK)) {
+			else if(mat.equals(Material.COOKED_BEEF) || mat.equals(Material.COOKED_CHICKEN) || mat.equals(Material.COOKED_MUTTON) || mat.equals(Material.COOKED_RABBIT) || mat.equals(Material.COOKED_PORKCHOP)) {
 				TextComponent msg = new TextComponent();
 				msg.setText("THE CHARRED MEAT MAKES YOU FEEL SICK");
 				msg.setColor(ChatColor.DARK_BLUE);
@@ -623,6 +708,11 @@ public class ListenerSubclass implements Listener{
 	}
 	@EventHandler
 	public void onChat(AsyncPlayerChatEvent event) {
+		event.getRecipients().clear();
+		for(Entity e: event.getPlayer().getNearbyEntities(100, 100, 100)) {
+			if(e instanceof Player)
+				event.getRecipients().add((Player)e);
+		}
 		if(event.getMessage().charAt(0)!='/' && Main.scoreboard.getObjective("subclass").getScore(event.getPlayer().getName()).getScore()==1) {
 			event.setMessage(event.getMessage().toUpperCase());
 		}
@@ -630,25 +720,191 @@ public class ListenerSubclass implements Listener{
 	//ARCANE BOWMEN------------------------------------------------------------------------------------------------------------------------------------
 	@EventHandler
 	public void shootBow(EntityShootBowEvent event) {
-		if(event.getEntity() instanceof Player) {// && event.getBow().getItemMeta().getLore()!=null && event.getBow().getItemMeta().getLore().contains("blah")) {
+		if(event.getEntity() instanceof Player) {
 			Player player = (Player)event.getEntity();
 			if(Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==6) {
 				if(event.getProjectile() instanceof TippedArrow) {
-					TippedArrow arrow = ((TippedArrow)event.getProjectile());		                
-					String effect = arrow.getBasePotionData().getType().name();
-					player.sendMessage(effect);
+					TippedArrow arrow = ((TippedArrow)event.getProjectile());
+					PotionType effect = arrow.getBasePotionData().getType();
 					//These are in all caps
-					if(effect.equals("NIGHT_VISION")) {
-						
+					if(effect.equals(PotionType.NIGHT_VISION)) {
+						int dmg = RunnableLastDamage.timeSinceLastDamage(player);
+						if(dmg<10) {
+							TextComponent msg = new TextComponent();
+							msg.setText("You have recently taken damage and must wait another "+(10-dmg)+" seconds");
+							msg.setColor(ChatColor.AQUA);
+							player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+							event.setCancelled(true);
+							addArrow(arrow.getBasePotionData(),arrow.getColor(),"Teleportation Arrow", Enchantment.PROTECTION_ENVIRONMENTAL,player,true);
+							return;
+						}
+						arrow.removeCustomEffect(PotionEffectType.NIGHT_VISION);
+						new BukkitRunnable(){
+	        		        @Override
+	        		        public void run(){
+	        		        	if(arrow.isInBlock()) {
+	        		        		player.teleport(arrow);
+	        		        		player.damage(2.0);
+	        		        		player.setCompassTarget(player.getLocation().add(0,0,-100000));
+	        		        		arrow.remove();
+	        		        		cancel();
+	        		        		return;
+	        		        	}
+	        		        	else if(arrow.isDead()) {
+	        		        		cancel();
+	        		        		return;
+	        		        	}
+	        		        }
+	        		   }.runTaskTimer(Main.instance, 8L, 2L);
+					}
+					else if(effect.equals(PotionType.FIRE_RESISTANCE)) {
+						int dmg = RunnableLastDamage.timeSinceLastDamage(player);
+						if(dmg<=6) {
+							TextComponent msg = new TextComponent();
+							msg.setText("You have recently taken damage and must wait another "+(6-dmg)+" seconds");
+							msg.setColor(ChatColor.AQUA);
+							player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+							event.setCancelled(true);
+							addArrow(arrow.getBasePotionData(),arrow.getColor(),"Explosive Arrow", Enchantment.PROTECTION_FIRE,player,true);
+							return;
+						}
+						arrow.removeCustomEffect(PotionEffectType.FIRE_RESISTANCE);
+						new BukkitRunnable(){
+	        		        @Override
+	        		        public void run(){
+	        		        	if(arrow.isInBlock()) {
+	        		        		TNTPrimed tnt = ((TNTPrimed)arrow.getWorld().spawnEntity(arrow.getLocation(), EntityType.PRIMED_TNT));
+	        		        		tnt.setYield(2F);
+	        		        		tnt.setFuseTicks(0);
+	        		        		arrow.remove();
+	        		        		cancel();
+	        		        		return;
+	        		        	}
+	        		        	else if(arrow.isDead()) {
+	        		        		cancel();
+	        		        		return;
+	        		        	}
+	        		        }
+	        		   }.runTaskTimer(Main.instance, 8L, 2L);
+					}
+					else if(effect.equals(PotionType.JUMP)) {
+						int dmg = RunnableLastDamage.timeSinceLastDamage(player);
+						if(dmg<=4) {
+							TextComponent msg = new TextComponent();
+							msg.setText("You have recently taken damage and must wait another "+(4-dmg)+" seconds");
+							msg.setColor(ChatColor.AQUA);
+							player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+							event.setCancelled(true);
+							addArrow(arrow.getBasePotionData(),arrow.getColor(),"Seeing Arrow", Enchantment.PROTECTION_FALL,player,true);
+							return;
+						}
+						arrow.removeCustomEffect(PotionEffectType.JUMP);
+						new BukkitRunnable(){
+	        		        @Override
+	        		        public void run(){
+	        		        	if(arrow.isInBlock()) {
+	        		        		for(Entity e:arrow.getNearbyEntities(50, 50, 50)) {
+	        		        			if(e instanceof LivingEntity && e!=player) {
+	        		        				((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.GLOWING,300,0));
+	        		        			}
+	        		        		}
+	        		        		arrow.remove();
+	        		        		cancel();
+	        		        		return;
+	        		        	}
+	        		        	else if(arrow.isDead()) {
+	        		        		cancel();
+	        		        		return;
+	        		        	}
+	        		        }
+	        		   }.runTaskTimer(Main.instance, 8L, 2L);
+					}
+					else if(effect.equals(PotionType.LUCK)) {
+						int dmg = RunnableLastDamage.timeSinceLastDamage(player);
+						if(dmg<=4) {
+							TextComponent msg = new TextComponent();
+							msg.setText("You have recently taken damage and must wait another "+(4-dmg)+" seconds");
+							msg.setColor(ChatColor.AQUA);
+							player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+							event.setCancelled(true);
+							addArrow(arrow.getBasePotionData(),arrow.getColor(),"Nausea Arrow", Enchantment.PROTECTION_EXPLOSIONS,player,true);
+							return;
+						}
+						arrow.removeCustomEffect(PotionEffectType.LUCK);
+						new BukkitRunnable(){
+	        		        @Override
+	        		        public void run(){
+	        		        	if(arrow.isInBlock()) {
+	        		        		for(Entity e:arrow.getNearbyEntities(50, 50, 50)) {
+	        		        			if(e instanceof LivingEntity && e!=player) {
+	        		        				((LivingEntity) e).addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION,300,0));
+	        		        			}
+	        		        		}
+	        		        		arrow.remove();
+	        		        		cancel();
+	        		        		return;
+	        		        	}
+	        		        	else if(arrow.isDead()) {
+	        		        		cancel();
+	        		        		return;
+	        		        	}
+	        		        }
+	        		   }.runTaskTimer(Main.instance, 8L, 2L);
+					}
+					else if(effect.equals(PotionType.SLOW_FALLING)) {
+						int dmg = RunnableLastDamage.timeSinceLastDamage(player);
+						if(dmg<=4) {
+							TextComponent msg = new TextComponent();
+							msg.setText("You have recently taken damage and must wait another "+(4-dmg)+" seconds");
+							msg.setColor(ChatColor.AQUA);
+							player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+							event.setCancelled(true);
+							addArrow(arrow.getBasePotionData(),arrow.getColor(),"Loyal Arrow", Enchantment.PROTECTION_PROJECTILE,player,true);
+							return;
+						}
+						PotionData data = arrow.getBasePotionData();
+						arrow.removeCustomEffect(PotionEffectType.SLOW_FALLING);
+						new BukkitRunnable(){
+	        		        @Override
+	        		        public void run(){
+	        		        	if(arrow.isInBlock() || arrow.isDead()){
+	        		        		addArrow(data,Color.WHITE,"Loyal Arrow", Enchantment.PROTECTION_PROJECTILE,player,false);
+	        		        		player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 3.0F, 1F);
+	        		        		arrow.remove();
+	        		        		cancel();
+	        		        		return;
+	        		        	}
+	        		        }
+	        		   }.runTaskTimer(Main.instance, 8L, 2L);
 					}
 				}
 			}
 		}
 	}
-	@EventHandler
-	public void projectileHit(ProjectileHitEvent event) {
-		if(event.getHitBlock()!=null) {
-			
+	private void addArrow(PotionData data, Color color, String name, Enchantment ench, Player player,boolean cancel) {
+		ItemStack offHand = player.getInventory().getItemInOffHand();
+		if(offHand.getType().equals(Material.TIPPED_ARROW) && offHand.getItemMeta().hasEnchant(ench)) {
+			if(cancel) {
+				player.getInventory().setItemInOffHand(null);
+				player.getInventory().setItemInOffHand(offHand);
+			}
+			else 
+				offHand.setAmount(offHand.getAmount()+1);
+		}	
+		else {
+			ItemStack arrow = new ItemStack(Material.TIPPED_ARROW);
+			PotionMeta met = (PotionMeta)arrow.getItemMeta();
+			met.setColor(color);
+			met.setBasePotionData(data);
+			met.setDisplayName(name);
+			met.addEnchant(ench, 0, true);
+			met.addItemFlags(ItemFlag.HIDE_ENCHANTS,ItemFlag.HIDE_POTION_EFFECTS);
+			arrow.setItemMeta(met);
+    		if(offHand==null || offHand.getType().equals(Material.AIR))
+    			player.getInventory().setItemInOffHand(arrow);
+    		else
+    			player.getInventory().addItem(arrow);
 		}
 	}
 }
+

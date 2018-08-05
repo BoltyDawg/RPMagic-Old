@@ -35,6 +35,7 @@ public enum ArmorType{
 			case LEATHER_HELMET:
 			case PUMPKIN:
 			case PLAYER_HEAD:
+			case ZOMBIE_HEAD:
 				return HELMET;
 			case DIAMOND_CHESTPLATE:
 			case GOLDEN_CHESTPLATE:

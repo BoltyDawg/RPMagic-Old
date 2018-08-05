@@ -4,6 +4,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -18,36 +21,28 @@ import java.util.UUID;
 
 import org.bukkit.plugin.Plugin;
 
-//TODO make sheriffs. Figure out how to make it work with Faction jails? Wanted posters
-	//Aren't reliant on Townee. Hit someone with baton and it updates their arrested score then forces them to be mounted on the sheriff and puts them in adventure mode. Right clicking the baton/ string or whatever 
-	//releases them and gives them extreme slowness for a bit so they can't run off, or permanently? It could be like they're hogtied
-//TODO locks and keys recipes for blacksmiths
-// TODO Finish all the subclasses, AND DO THEIR CRAFTING, AND THEIR MANUALS. Go through each subclass individually, focus in on it.
-//TODO Skim through subclasses and see if there are any more damage cooldowns I should add
-//TODO Buy mcmmo... eh
-//TODO improve Mage casting system: maybe let them chose a spell that they can bind to left mouse, rather than it always being beam?
-// TODO Look up some pre-made 1.13 cmd block stuff that can be used as spells? Like the black hole
-//TODO look into Magic autmatica
-//TODO make public stuff protected instead. OPh
-// TODO fix /r so that it uses the nickname and has a proper color format? or.... delete it? :(
-//TODO Store a map of placed heads with their location as the key and the SkullMeta as the object, so that when a player breaks one of these it gives them the skull with the same meta?
-/**TODO: AFTER UPDATE
- * on death: remove their Stamina / Magicka bar
- * set up the boss bars on join/leave/death, make sure to replace barbarian stamina with rage
- * make sure all the commands still work
- * Make Hoplites and knight spears
+/**OPTIONAL STUFF TODO
+ * Buy mcmmo... eh
+ * improve Mage casting system: maybe let them chose a spell that they can bind to left mouse, rather than it always being beam?
+ * Look up some pre-made 1.13 cmd block stuff that can be used as spells? Like the black hole
+ * look into Magic autmatica
+ * make public stuff protected instead?. OPh
  */
+
 public class Main extends JavaPlugin{
 	public static Main instance;
 	public static boolean nick;
 	public static final int BASE_STAM = 100;
 	public static final int BASE_MAG = 100;
+	public static final int RAGE = 400;
 	public static Scoreboard scoreboard;
 	
 	public static HashMap<UUID,ItemStack> leftHands;
 	public static HashMap<UUID,ArrayList<String>> mages;
 	public static HashMap<UUID,Location> beacons;
 	public static HashMap<Player,Integer> attributes;
+	public static HashMap<Player,BossBar> bars;
+	public static HashMap<Player,BossBar> rageBars;
 	@Override
 	public void onEnable() {
 		instance = this;
@@ -56,27 +51,28 @@ public class Main extends JavaPlugin{
 		beacons = new HashMap<UUID,Location>();
 		scoreboard=this.getServer().getScoreboardManager().getMainScoreboard();
 		attributes = new HashMap<Player,Integer>();
+		bars = new HashMap<Player,BossBar>();
+		rageBars = new HashMap<Player,BossBar>();
 		
-		Plugin magicPlugin = Bukkit.getPluginManager().getPlugin("Magic");
-		if(magicPlugin==null || !(magicPlugin.getName().equals("Magic"))) {
-			Bukkit.getConsoleSender().sendMessage("[RPMagic] Magic is required to run this plugin! Shutting down..."); 
-			instance = null;
-			this.setEnabled(false);
-			return;
-		}
-		else instance.getLogger().info("Found Magic");
+//		Plugin magicPlugin = Bukkit.getPluginManager().getPlugin("Magic");
+//		if(magicPlugin==null || !(magicPlugin.getName().equals("Magic"))) {
+//			Bukkit.getConsoleSender().sendMessage("[RPMagic] Magic is required to run this plugin! Shutting down..."); 
+//			instance = null;
+//			this.setEnabled(false);
+//			return;
+//		}
+//		else instance.getLogger().info("Found Magic");
 		
 		Plugin namer = Bukkit.getPluginManager().getPlugin("Nicky");
 		if(namer == null) {instance.getLogger().info("Launching without Nicky"); nick = false;}
 		else {instance.getLogger().info("Launching with Nicky"); nick = true;}
 		
-		//perms = GroupManager.BukkitPermissions;//(GroupManager)Bukkit.getPluginManager().getPlugin("GroupManager");
-		
 		getServer().getPluginManager().registerEvents(new ListenerClass(), this);
 		getServer().getPluginManager().registerEvents(new ListenerSubclass(), this);
+		getServer().getPluginManager().registerEvents(new ListenerRole(), this);
+		
 		ArrayList<String> block = new ArrayList<String>();
-		block.add(Material.SKULL.name());
-		block.add(Material.SKULL_ITEM.name());
+		block.add(Material.PLAYER_HEAD.name());
 		getServer().getPluginManager().registerEvents(new ArmorListener(block), this);
 		
 		this.getCommand("rpcast").setExecutor(new CommandCast());
@@ -96,21 +92,21 @@ public class Main extends JavaPlugin{
 		f.mkdirs();
 		
 		//Initializes the scoreboard objectives if this is the first time starting
-		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("class", "dummy");}
+		try {scoreboard.registerNewObjective("class", "dummy","Class");}
 		catch(Exception e) {;}
-		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("subclass", "dummy");}
+		try {scoreboard.registerNewObjective("subclass", "dummy","Subclass");}
 		catch(Exception e) {;}
-		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("role", "dummy");}
+		try {scoreboard.registerNewObjective("role", "dummy","Role");}
 		catch(Exception e) {;}
-		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("Magicka", "dummy");}
+		try {scoreboard.registerNewObjective("Magicka", "dummy","Magicka");}
 		catch(Exception e) {;}
-		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("Stamina", "dummy");}
+		try {scoreboard.registerNewObjective("Stamina", "dummy","Stamina");}
 		catch(Exception e) {;}
-		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("damage", "stat.damageDealt").setDisplayName("RAGE");}
+		try {scoreboard.registerNewObjective("damage", "dummy","Damage");}
 		catch(Exception e) {;}
-		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("alive", "dummy");}
+		try {scoreboard.registerNewObjective("alive", "dummy","Alive");}
 		catch(Exception e) {;}
-		try {this.getServer().getScoreboardManager().getMainScoreboard().registerNewObjective("damageTime", "dummy");}
+		try {scoreboard.registerNewObjective("damageTime", "dummy","Damage Time");}
 		catch(Exception e) {;}
 		
 		//Creates the files necessary for storage
@@ -127,7 +123,7 @@ public class Main extends JavaPlugin{
 	        		player.setCompassTarget(player.getLocation().add(0,0,-100000));
 	        	}
 	        }
-	   }.runTaskTimer(this, 600, 600);
+	   }.runTaskTimer(this, 1200, 1200);
 	}
 	@Override
 	public void onDisable() {
@@ -136,12 +132,35 @@ public class Main extends JavaPlugin{
 		instance.getLogger().info("RPMagic version "+instance.getDescription().getVersion() + " is now disabled");
 		instance = null;
 	}
-	
 	public static String getName(Player p) {
 		if(Main.nick==false) return p.getName();
 		
 		String n = new Nick(p).get();
 		if(n==null) return p.getName();
 		else return ChatColor.stripColor(n);
+	}
+	public static BossBar staminaBar(Player player) {
+		BossBar bar = Bukkit.createBossBar(ChatColor.GREEN+"Stamina", BarColor.GREEN, BarStyle.SOLID);
+		bar.addPlayer(player);
+		bar.setProgress(((double)Main.scoreboard.getObjective("Stamina").getScore(player.getName()).getScore())/(Main.BASE_STAM+Main.attributes.getOrDefault(player,0)));
+		return bar;
+	}
+	public static BossBar magickaBar(Player player) {
+		BossBar bar = Bukkit.createBossBar(ChatColor.BLUE+"Magicka", BarColor.BLUE, BarStyle.SOLID);
+		bar.addPlayer(player);
+		bar.setProgress(((double)Main.scoreboard.getObjective("Magicka").getScore(player.getName()).getScore())/(Main.BASE_MAG+Main.attributes.getOrDefault(player,0)));
+		return bar;
+	}
+	public static BossBar rageBar(Player player) {
+		BossBar bar = Bukkit.createBossBar(ChatColor.DARK_RED+"RAGE", BarColor.RED, BarStyle.SOLID);
+		bar.addPlayer(player);
+		int dmg = Main.scoreboard.getObjective("damage").getScore(player.getName()).getScore();
+		if(dmg>=Main.RAGE) {
+			bar.setProgress(1.0);
+			ListenerSubclass.giveRageDrop(player);
+		}
+		else
+			bar.setProgress(((double)dmg)/Main.RAGE);
+		return bar;
 	}
 }

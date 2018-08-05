@@ -1,11 +1,16 @@
 package com.github.boltydawg;
 
+import java.util.ArrayList;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 public class CommandRole implements CommandExecutor {
 
@@ -30,6 +35,11 @@ public class CommandRole implements CommandExecutor {
 				break;
 			}
 			case "merchant":{
+				ItemStack spawn = new ItemStack(Material.VILLAGER_SPAWN_EGG);
+				ItemMeta met = spawn.getItemMeta();
+				met.setDisplayName("Spawn Shopkeeper");
+				spawn.setItemMeta(met);
+				player.getInventory().addItem(spawn);
 				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+name+" parent add merchant");
 				Main.scoreboard.getObjective("role").getScore(name).setScore(3);
 				player.sendMessage(ChatColor.GREEN+"You are now a merchant!");
@@ -44,6 +54,14 @@ public class CommandRole implements CommandExecutor {
 				break;
 			}
 			case "sheriff":{
+				ItemStack lasso = new ItemStack(Material.VILLAGER_SPAWN_EGG);
+				ItemMeta met = lasso.getItemMeta();
+				met.setDisplayName(ChatColor.GREEN+ChatColor.ITALIC.toString()+"Sheriff Lasso");
+				ArrayList<String> lore = new ArrayList<String>();
+				lore.add("Justice!");
+				met.setLore(lore);
+				lasso.setItemMeta(met);
+				player.getInventory().addItem(lasso);
 				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+name+" parent add sheriff");
 				Main.scoreboard.getObjective("role").getScore(name).setScore(5);
 				player.sendMessage(ChatColor.GREEN+"You are now a sheriff!");

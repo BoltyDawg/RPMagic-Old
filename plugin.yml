@@ -1,9 +1,10 @@
 name: RPMagic
 main: com.github.boltydawg.Main
-version: 0.5
+version: 1.0
 author: BoltyDawg
 description: A magical class-based roleplaying system!
 depend: [Magic]
+api-version: 1.13
 commands:
   getbook:
     description: Gives the sender a spell book
