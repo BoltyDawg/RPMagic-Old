@@ -16,8 +16,12 @@ public class CommandDropXP implements CommandExecutor {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(!(sender instanceof Player)) return false;
-		Player p = ((Player) sender);
-		int xp = Experience.getExp(p)-7;
+		Player player = ((Player) sender);
+		if(player.getInventory().firstEmpty()==-1) {
+			player.sendMessage("You're inventory is full!");
+			return true;
+		}
+		int xp = Experience.getExp(player)-7;
 		if(xp>0) {
 			ItemStack bottle = new ItemStack(Material.POTION);
 			PotionMeta met = (PotionMeta)bottle.getItemMeta();
@@ -25,14 +29,14 @@ public class CommandDropXP implements CommandExecutor {
 			l.add(ChatColor.YELLOW.toString()+xp+ChatColor.YELLOW+" orbs");
 			met.setLore(l);
 			met.setColor(Color.GREEN);
-			met.setDisplayName(ChatColor.GREEN+Main.getName(p)+ChatColor.GREEN+"'s XP");
+			met.setDisplayName(ChatColor.GREEN+Main.getName(player)+ChatColor.GREEN+"'s XP");
 			met.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
 			bottle.setItemMeta(met);
-			p.getInventory().addItem(bottle);
-			Experience.changeExp(p, -xp);
+			player.getInventory().addItem(bottle);
+			Experience.changeExp(player, -xp);
 			return true;
 		}
-		p.sendMessage("You need at least over 1 level of xp");
+		player.sendMessage("You need at least over 1 level of xp");
 		return true;
 	}
 }

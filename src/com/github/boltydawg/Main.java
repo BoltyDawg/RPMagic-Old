@@ -13,6 +13,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard;
 
+import com.nisovin.shopkeepers.api.ShopkeepersPlugin;
+
 import io.loyloy.nicky.Nick;
 import java.io.File;
 import java.util.ArrayList;
@@ -36,13 +38,16 @@ public class Main extends JavaPlugin{
 	public static final int BASE_MAG = 100;
 	public static final int RAGE = 400;
 	public static Scoreboard scoreboard;
+	public static boolean local = false;
 	
 	public static HashMap<UUID,ItemStack> leftHands;
 	public static HashMap<UUID,ArrayList<String>> mages;
 	public static HashMap<UUID,Location> beacons;
 	public static HashMap<Player,Integer> attributes;
-	public static HashMap<Player,BossBar> bars;
-	public static HashMap<Player,BossBar> rageBars;
+	public static HashMap<UUID,BossBar> bars;
+	public static HashMap<UUID,BossBar> rageBars;
+	
+	public static ShopkeepersPlugin shopkeepers;
 	@Override
 	public void onEnable() {
 		instance = this;
@@ -51,8 +56,8 @@ public class Main extends JavaPlugin{
 		beacons = new HashMap<UUID,Location>();
 		scoreboard=this.getServer().getScoreboardManager().getMainScoreboard();
 		attributes = new HashMap<Player,Integer>();
-		bars = new HashMap<Player,BossBar>();
-		rageBars = new HashMap<Player,BossBar>();
+		bars = new HashMap<UUID,BossBar>();
+		rageBars = new HashMap<UUID,BossBar>();
 		
 //		Plugin magicPlugin = Bukkit.getPluginManager().getPlugin("Magic");
 //		if(magicPlugin==null || !(magicPlugin.getName().equals("Magic"))) {
@@ -63,9 +68,18 @@ public class Main extends JavaPlugin{
 //		}
 //		else instance.getLogger().info("Found Magic");
 		
-		Plugin namer = Bukkit.getPluginManager().getPlugin("Nicky");
-		if(namer == null) {instance.getLogger().info("Launching without Nicky"); nick = false;}
-		else {instance.getLogger().info("Launching with Nicky"); nick = true;}
+		for(Plugin plugin:Bukkit.getPluginManager().getPlugins()) {
+			if(plugin instanceof ShopkeepersPlugin)
+				shopkeepers=(ShopkeepersPlugin)plugin;
+			else if(plugin.getName().equalsIgnoreCase("Nicky")) {
+				instance.getLogger().info("Found Nicky"); 
+				nick = true;
+			}
+		}
+		if(!nick) {
+			instance.getLogger().info("Launching without Nicky"); 
+			nick = false;
+		}
 		
 		getServer().getPluginManager().registerEvents(new ListenerClass(), this);
 		getServer().getPluginManager().registerEvents(new ListenerSubclass(), this);
@@ -87,6 +101,10 @@ public class Main extends JavaPlugin{
 		this.getCommand("spellinfo").setExecutor(new CommandSpellInfo());
 		this.getCommand("getkey").setExecutor(new CommandKey());
 		this.getCommand("role").setExecutor(new CommandRole());
+		this.getCommand("local").setExecutor(new CommandLocal());
+		this.getCommand("openinv").setExecutor(new CommandOpenInv());
+		this.getCommand("dungeons").setExecutor(new CommandDungeons());
+		this.getCommand("rename").setExecutor(new CommandRename());
 		
 		File f = new File("plugins\\RPMagic");
 		f.mkdirs();
@@ -108,6 +126,14 @@ public class Main extends JavaPlugin{
 		catch(Exception e) {;}
 		try {scoreboard.registerNewObjective("damageTime", "dummy","Damage Time");}
 		catch(Exception e) {;}
+		try {scoreboard.registerNewObjective("settlement", "dummy","Settlement");}
+		catch(Exception e) {;}
+		try {scoreboard.registerNewObjective("pillars", "dummy","Settlement");}
+		catch(Exception e) {;}
+		try {scoreboard.registerNewObjective("zombie", "dummy","Settlement");}
+		catch(Exception e) {;}
+		try {scoreboard.registerNewObjective("water", "dummy","Settlement");}
+		catch(Exception e) {;}
 		
 		//Creates the files necessary for storage
 		SerUtil.createFiles();
@@ -116,15 +142,16 @@ public class Main extends JavaPlugin{
 		
 		instance.getLogger().info("RPMagic version " + instance.getDescription().getVersion() + " is now enabled!");
 		
-		new BukkitRunnable(){
-	        @Override
-	        public void run(){
-	        	for(Player player : Bukkit.getOnlinePlayers()) {
-	        		player.setCompassTarget(player.getLocation().add(0,0,-100000));
-	        	}
-	        }
-	   }.runTaskTimer(this, 1200, 1200);
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				for(Player player : Bukkit.getOnlinePlayers()) {
+					player.setCompassTarget(player.getLocation().add(0,0,-100));
+				}
+			}
+		}.runTaskTimer(this, 30L, 30L);
 	}
+	
 	@Override
 	public void onDisable() {
 		SerUtil.storeValues();
@@ -142,13 +169,25 @@ public class Main extends JavaPlugin{
 	public static BossBar staminaBar(Player player) {
 		BossBar bar = Bukkit.createBossBar(ChatColor.GREEN+"Stamina", BarColor.GREEN, BarStyle.SOLID);
 		bar.addPlayer(player);
-		bar.setProgress(((double)Main.scoreboard.getObjective("Stamina").getScore(player.getName()).getScore())/(Main.BASE_STAM+Main.attributes.getOrDefault(player,0)));
+		double d = ((double)Main.scoreboard.getObjective("Stamina").getScore(player.getName()).getScore())/(Main.BASE_STAM+Main.attributes.getOrDefault(player,0));
+		if(d>1)
+			bar.setProgress(1.0);
+		else if(d>=0)
+			bar.setProgress(d);
+		else
+			bar.setProgress(0);
 		return bar;
 	}
 	public static BossBar magickaBar(Player player) {
 		BossBar bar = Bukkit.createBossBar(ChatColor.BLUE+"Magicka", BarColor.BLUE, BarStyle.SOLID);
 		bar.addPlayer(player);
-		bar.setProgress(((double)Main.scoreboard.getObjective("Magicka").getScore(player.getName()).getScore())/(Main.BASE_MAG+Main.attributes.getOrDefault(player,0)));
+		double d = ((double)Main.scoreboard.getObjective("Magicka").getScore(player.getName()).getScore())/(Main.BASE_MAG+Main.attributes.getOrDefault(player,0));
+		if(d>1)
+			bar.setProgress(1.0);
+		else if(d>=0)
+			bar.setProgress(d);
+		else
+			bar.setProgress(0);
 		return bar;
 	}
 	public static BossBar rageBar(Player player) {
@@ -159,8 +198,10 @@ public class Main extends JavaPlugin{
 			bar.setProgress(1.0);
 			ListenerSubclass.giveRageDrop(player);
 		}
-		else
+		else if(dmg>=0)
 			bar.setProgress(((double)dmg)/Main.RAGE);
+		else
+			bar.setProgress(0);
 		return bar;
 	}
 }

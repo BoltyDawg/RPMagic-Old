@@ -6,12 +6,14 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -20,6 +22,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -44,7 +47,6 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
-import com.nisovin.shopkeepers.api.ShopkeepersAPI;
 import com.nisovin.shopkeepers.api.shopkeeper.Shopkeeper;
 import com.nisovin.shopkeepers.api.shopkeeper.player.PlayerShopkeeper;
 
@@ -58,7 +60,7 @@ import io.loyloy.nicky.Nick;
  * @author BoltyDawg
  */
 public class ListenerClass implements Listener {
-	public static final Location HOSPITAL = new Location(Main.instance.getServer().getWorlds().get(0),-24062.0,78.1,13810.0,180F,90.0F);
+	public static final Location HOSPITAL = new Location(Main.instance.getServer().getWorlds().get(0),-24062.0,77,13810.0,180F,90.0F);
 	/**
 	 * Opens up a book gui on the mage's screen containing their spells
 	 * @param player that's opening the book
@@ -94,9 +96,9 @@ public class ListenerClass implements Listener {
 //		item.setItemMeta(met);
 		if(air || block) {
 			//Makes it so only enchanters and mages can enchant
-			if(block && Material.ENCHANTING_TABLE.equals(event.getClickedBlock().getType())) {
+			if(block && event.getClickedBlock().getType().equals(Material.ENCHANTING_TABLE)) {
 				if(Main.scoreboard.getObjective("role").getScore(player.getName()).getScore()==2) {
-					if(item.getEnchantments()!=null && item.getEnchantments().size()==1 && item.containsEnchantment(Enchantment.VANISHING_CURSE)) {
+					if(item!=null && item.getType()!=Material.AIR && item.getEnchantments()!=null && item.getEnchantments().size()==1 && item.containsEnchantment(Enchantment.VANISHING_CURSE)) {
 						if(Experience.getExp(player)>=100) {
 							item.removeEnchantment(Enchantment.VANISHING_CURSE);
 							Experience.changeExp(player, -100);
@@ -165,7 +167,7 @@ public class ListenerClass implements Listener {
 				//checks if a player is holding a Tome
 				else if(item.getType().equals(Material.BOOK) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().size()==2 && ChatColor.stripColor(item.getItemMeta().getLore().get(0)).equals("Contains the knowledge of")) {
 					if(Main.scoreboard.getObjective("class").getScore(player.getName()).getScore()==2) {
-						if(Main.bars.get(player).getProgress()==1.0) {
+						if(Main.bars.get(player.getUniqueId()).getProgress()==1.0) {
 							String spell = ChatColor.stripColor(item.getItemMeta().getLore().get(1));
 							Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"teach "+player.getName()+" "+spell);
 							Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(0);
@@ -189,7 +191,7 @@ public class ListenerClass implements Listener {
 				}
 			}
 		}
-		else if(item!=null) {
+		else if((event.getAction()==Action.LEFT_CLICK_AIR || event.getAction().equals(Action.LEFT_CLICK_BLOCK)) && item!=null && item.getType()!=Material.AIR) {
 			int cla = Main.scoreboard.getObjective("class").getScore(player.getName()).getScore();
 			//Manages a Fighter's Stamina whenever they swing a weapon
 			if(cla==1) {
@@ -255,6 +257,10 @@ public class ListenerClass implements Listener {
 			else if(lore.contains("fundamenta fortis") && score!=1) {
 				event.setCancelled(true);
 				player.sendMessage(ChatColor.RED+"Only a Fighter can wear this armor!");
+			}
+			else if(lore.contains("Sky above,") && sub!=5) {
+				event.setCancelled(true);
+				player.sendMessage(ChatColor.RED+"Only an Angel can wear these boots");
 			}
 		}
 		if(!event.isCancelled()) {
@@ -339,74 +345,86 @@ public class ListenerClass implements Listener {
 	@EventHandler
 	public void onPlayerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
-		player.setCompassTarget(player.getLocation().add(0,0,-100000));
-		
 		//Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"f config playersWhoBypassAllProtection add "+player.getName());
 		
 		String nam = Main.getName(player);
-		if(nam!=player.getName()) event.setJoinMessage(ChatColor.GOLD+nam+ChatColor.YELLOW+" joined the game.");
+		if(nam!=player.getName()) event.setJoinMessage(ChatColor.GRAY+player.getName()+ChatColor.YELLOW+" joined the game as "+ChatColor.GOLD+nam);
 		int score = Main.scoreboard.getObjective("class").getScore(player.getName()).getScore();
 		//Fighters
 		if(score==1) {
+			int i=0;
 			for(ItemStack is: player.getInventory().getArmorContents()) {
-				if(is==null || is.getItemMeta().getLore()==null) continue;
-				for(String s : is.getItemMeta().getLore()) {
-					if(s!=null && s.contains(" Stamina") && s.contains("+")) {
-						Main.attributes.put(player, Integer.parseInt(s.substring(1,s.indexOf(" ")))+Main.attributes.getOrDefault(player, 0));
+				if(is!=null && is.getType()!=Material.AIR && is.getItemMeta().getLore()!=null) {
+					for(String s : is.getItemMeta().getLore()) {
+						if(s!=null && s.contains(" Stamina") && s.contains("+")) {
+							i+=Integer.parseInt(s.substring(1,s.indexOf(" ")));
+						}
 					}
 				}
 			}
-			Main.bars.put(player, Main.staminaBar(player));
+			if(i>0)
+				Main.attributes.put(player, i);
+			Main.bars.put(player.getUniqueId(), Main.staminaBar(player));
 			RunnableRegen.fighterRegen(player);
 			
 			if(Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==1) {
-				Main.rageBars.put(player, Main.rageBar(player));
+				Main.rageBars.put(player.getUniqueId(), Main.rageBar(player));
 			}
 		}
 		//Mages
 		else if(score==2) {
+			int i=0;
 			for(ItemStack is: player.getInventory().getArmorContents()) {
-				if(is==null || is.getItemMeta().getLore()==null) continue;
-				for(String s : is.getItemMeta().getLore()) {
-					if(s!=null && s.contains(" Magicka") && s.contains("+")) {
-						Main.attributes.put(player, Integer.parseInt(s.substring(1,s.indexOf(" ")))+Main.attributes.getOrDefault(player, 0));
+				if(is!=null && is.getType()!=Material.AIR && is.getItemMeta().getLore()!=null) {
+					for(String s : is.getItemMeta().getLore()) {
+						if(s!=null && s.contains(" Magicka") && s.contains("+")) {
+							i+=Integer.parseInt(s.substring(1,s.indexOf(" ")));
+						}
 					}
 				}
 			}
-			Main.bars.put(player,Main.magickaBar(player));
-			
+			if(i>0)
+				Main.attributes.put(player, i);
+			Main.bars.put(player.getUniqueId(),Main.magickaBar(player));
 			RunnableRegen.mageRegen(player);
 		}
 		//Rangers
 		else if(score==3) {
-			if(Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==5)
-				RunnableAngel.activate(player);
+			int i=0;
 			for(ItemStack is: player.getInventory().getArmorContents()) {
-				if(is==null || is.getItemMeta().getLore()==null) continue;
-				for(String s : is.getItemMeta().getLore()) {
-					if(s!=null && s.contains(" Stamina") && s.contains("+")) {
-						Main.attributes.put(player, Integer.parseInt(s.substring(1,s.indexOf(" ")))+Main.attributes.getOrDefault(player, 0));
+				if(is!=null && is.getType()!=Material.AIR && is.getItemMeta().getLore()!=null) {
+					for(String s : is.getItemMeta().getLore()) {
+						if(s!=null && s.contains(" Stamina") && s.contains("+")) {
+							i+=Integer.parseInt(s.substring(1,s.indexOf(" ")));
+						}
 					}
 				}
 			}
-			Main.bars.put(player,Main.staminaBar(player));
-			
+			if(i>0)
+				Main.attributes.put(player, i);
+			Main.bars.put(player.getUniqueId(),Main.staminaBar(player));
 			RunnableRegen.rangerRegen(player);
+			
+			if(Main.scoreboard.getObjective("subclass").getScore(player.getName()).getScore()==5)
+				RunnableAngel.activate(player);
 		}
 	}
 	@EventHandler
 	public void onPlayerLeave(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
+		String nam = Main.getName(player);
+		if(nam!=player.getName()) event.setQuitMessage(ChatColor.GOLD+nam+ChatColor.YELLOW+" left the game.");
 		Main.attributes.remove(player);
 		draining.remove(player);
-		RunnableRegen.regenerates.remove(player);
-		if(Main.bars.containsKey(player)) {
-			Main.bars.get(player).removeAll();
-			Main.bars.remove(player);
+		RunnableRegen.regenerates.remove(player.getUniqueId());
+		RunnableAngel.angels.remove(player);
+		if(Main.bars.containsKey(player.getUniqueId())) {
+			Main.bars.get(player.getUniqueId()).removeAll();
+			Main.bars.remove(player.getUniqueId());
 		}
-		if(Main.rageBars.containsKey(player)) {
-			Main.rageBars.get(player).removeAll();
-			Main.rageBars.remove(player);
+		if(Main.rageBars.containsKey(player.getUniqueId())) {
+			Main.rageBars.get(player.getUniqueId()).removeAll();
+			Main.rageBars.remove(player.getUniqueId());
 		}
 	}
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
@@ -456,13 +474,13 @@ public class ListenerClass implements Listener {
 					cancel();
 					draining.put(player, false);
 					player.setWalkSpeed((float).2);
-					Main.bars.get(player).setProgress(0);
+					Main.bars.get(player.getUniqueId()).setProgress(0);
 					RunnableRegen.sprintingRegen(player);
 					return;
 	        	}
 	        	else {
 	    			Main.scoreboard.getObjective("Stamina").getScore(player.getName()).setScore(sc);
-	    			Main.bars.get(player).setProgress(((double)sc)/(Main.BASE_STAM+Main.attributes.getOrDefault(player,0)));
+	    			Main.bars.get(player.getUniqueId()).setProgress(((double)sc)/(Main.BASE_STAM+Main.attributes.getOrDefault(player,0)));
 	        	}
 	        }
 	    }.runTaskTimer(Main.instance, 1L, 3L);
@@ -488,26 +506,66 @@ public class ListenerClass implements Listener {
 	@EventHandler
 	public void onPlayerDeathEvent(PlayerDeathEvent event) {
 		Player player = event.getEntity().getPlayer();
+		String name = Main.getName(player);
+		String dm = event.getDeathMessage();
+		event.setDeathMessage("");
+		dm=dm.replaceAll(player.getName(), name);
+		for(Player pl : player.getWorld().getPlayers()) {
+			if(dm.contains(pl.getName())) {
+				dm=dm.replaceAll(pl.getName(), Main.getName(pl));
+			}
+		}
+		for(Player pl : player.getWorld().getPlayers()) {
+			if(pl.getLocation().distance(player.getLocation())<=100) {
+				pl.sendMessage(dm);
+			}
+		}
+		
 		int alive = Main.scoreboard.getObjective("alive").getScore(player.getName()).getScore();
 		if(player.getInventory().contains(Material.TOTEM_OF_UNDYING)) {
-			player.getInventory().removeItem(new ItemStack(Material.TOTEM_OF_UNDYING));
+			 
+			ListIterator<ItemStack> litr = event.getDrops().listIterator();
+			while(litr.hasNext()) {
+				ItemStack is = litr.next();
+				if(is.getType().equals(Material.TOTEM_OF_UNDYING)) {
+					litr.remove();
+					break;
+				}
+			}
+			
 			player.setBedSpawnLocation(HOSPITAL,true);
-			player.spigot().respawn();
-			player.playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 2.0F, 1F);
-			player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION,200,2));
+			new BukkitRunnable()
+		    {
+		        @Override
+		        public void run()
+		        {
+		        	player.spigot().respawn();
+		        	new BukkitRunnable()
+				    {
+				        @Override
+				        public void run()
+				        {
+				        	player.playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 1.0F, 1F);
+				        	player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION,200,2));
+				        	player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS,200,2));
+				        }
+				    }.runTaskLater(Main.instance, 10L);
+		        }
+		    }.runTaskLater(Main.instance, 10L);
+			
 			return;
 		}
-		if(alive==1) {
+		else if(alive==1) {
 			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"skillreset "+player.getName()+" all");
 			Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+player.getName()+" clear");
 			//Removing player data stuff -------------------------------------------------------------------------------------------------------
-			if(Main.bars.containsKey(player)) {
-				Main.bars.get(player).removeAll();
-				Main.bars.remove(player);
+			if(Main.bars.containsKey(player.getUniqueId())) {
+				Main.bars.get(player.getUniqueId()).removeAll();
+				Main.bars.remove(player.getUniqueId());
 			}
-			if(Main.rageBars.containsKey(player)) {
-				Main.rageBars.get(player).removeAll();
-				Main.rageBars.remove(player);
+			if(Main.rageBars.containsKey(player.getUniqueId())) {
+				Main.rageBars.get(player.getUniqueId()).removeAll();
+				Main.rageBars.remove(player.getUniqueId());
 			}
 			Main.mages.remove(player.getUniqueId());
 			if(Main.leftHands.containsKey(player.getUniqueId())) {
@@ -526,31 +584,28 @@ public class ListenerClass implements Listener {
 				Main.beacons.remove(player.getUniqueId());
 			}
 			if(Main.scoreboard.getObjective("role").getScore(player.getName()).getScore()==3) {
-				for(Shopkeeper keeper : ShopkeepersAPI.getPlugin().getShopkeeperRegistry().getAllShopkeepers()) {
-					if(keeper instanceof PlayerShopkeeper) {
-						PlayerShopkeeper pShop = (PlayerShopkeeper)keeper;
-						if(pShop.getOwner().equals(player)) {
-							pShop.delete();
+				if(Main.shopkeepers==null) {
+					player.sendMessage("No shopkeepers plugin found!");
+				}
+				else {
+					for(Shopkeeper keeper : Main.shopkeepers.getShopkeeperRegistry().getAllShopkeepers()) {
+						if(keeper instanceof PlayerShopkeeper) {
+							PlayerShopkeeper pShop = (PlayerShopkeeper)keeper;
+							if(pShop.getOwner().equals(player)) {
+								pShop.delete();
+							}
 						}
 					}
 				}
+				
 			}
 			//------------------------------------------------------------------------------------------------------------------------------
-			String n = Main.getName(player);
-			String dm = event.getDeathMessage();
-			event.setDeathMessage("");
-			dm=dm.replaceAll(player.getName(), n);
-			for(Player pl : player.getWorld().getPlayers()) {
-				if(dm.contains(pl.getName())) {
-					dm=dm.replaceAll(pl.getName(), Main.getName(pl));
-				}
-			}
 			ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
 			SkullMeta met = (SkullMeta)skull.getItemMeta();
 			met.setOwningPlayer(player);
-			met.setDisplayName(ChatColor.DARK_RED+n+".");
+			met.setDisplayName(ChatColor.DARK_RED+name+".");
 			List<String> lore = new ArrayList<String>();
-			String[] msg = dm.replaceAll(n+" ", "").trim().split(" ");
+			String[] msg = dm.replaceAll(name+" ", "").trim().split(" ");
 			msg[0] = msg[0].substring(0, 1).toUpperCase()+msg[0].substring(1);
 			int j = 0;
 			String str="";
@@ -569,15 +624,10 @@ public class ListenerClass implements Listener {
 			skull.setItemMeta(met);
 			player.getWorld().dropItem(player.getLocation(), skull);
 			
-			for(Player pl : player.getWorld().getPlayers()) {
-				if(pl.getLocation().distance(player.getLocation())<=100) {
-					pl.sendMessage(dm);
-				}
-			}
-			
-			new Nick(player).unSet();
+			if(Main.nick)
+				new Nick(player).unSet();
 			Main.scoreboard.resetScores(player.getName());
-			player.setBedSpawnLocation(Main.instance.getServer().getWorld("RPG").getSpawnLocation(), true);
+			player.setBedSpawnLocation(Main.instance.getServer().getWorlds().get(0).getSpawnLocation(), true);
 		}
 		else if(alive==2) {
 			Main.scoreboard.getObjective("alive").getScore(player.getName()).setScore(1);
@@ -586,7 +636,6 @@ public class ListenerClass implements Listener {
 	@EventHandler
 	public void onCreatureSpawnEvent(CreatureSpawnEvent event) {
 		if(event.getSpawnReason().equals(CreatureSpawnEvent.SpawnReason.SPAWNER) && !(event.getEntity().getType()==EntityType.BLAZE || event.getEntity().getType()==EntityType.CAVE_SPIDER || event.getEntity().getType()==EntityType.SILVERFISH)) {
-			event.setCancelled(true);
 			int x = (int)Math.round(event.getLocation().getX());
 			int y = (int)Math.round(event.getLocation().getY());
 			int z = (int)Math.round(event.getLocation().getZ());
@@ -596,7 +645,7 @@ public class ListenerClass implements Listener {
 			if(event.getEntityType().equals(EntityType.ZOMBIE)){
 				if(event.getEntity().getEquipment().getHelmet()==null || event.getEntity().getEquipment().getHelmet().getType().equals(Material.AIR)) {
 					event.getEntity().getEquipment().setHelmet(new ItemStack(Material.ZOMBIE_HEAD));
-					event.getEntity().getAttribute(Attribute.ZOMBIE_SPAWN_REINFORCEMENTS).setBaseValue(.35);
+					//event.getEntity().getAttribute(Attribute.ZOMBIE_SPAWN_REINFORCEMENTS).setBaseValue(.35);
 				}
 			}
 		}
@@ -607,20 +656,29 @@ public class ListenerClass implements Listener {
 			Player player = (Player)event.getPlayer();
 			ItemStack item = player.getInventory().getItemInMainHand();
 			if(item.getType().equals(Material.SUNFLOWER) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains("lock")){
-				Chest chest = (Chest)event.getInventory().getHolder();
-				if(chest.isLocked())
-					return;
-				chest.setLock(ChatColor.GREEN+(Main.getName(player)+"'s key"));
-				chest.update();
-				
-				TextComponent msg = new TextComponent();
-				msg.setText("Only your key can open this chest now");
-				msg.setColor(ChatColor.GREEN);
-				player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
-				player.sendMessage(ChatColor.GRAY+"Type /getkey to get your personal key!");
-				
-				event.setCancelled(true);
-				item.setAmount(item.getAmount()-1);
+				if(event.getInventory().getHolder() instanceof Chest) {
+					Chest chest = (Chest)event.getInventory().getHolder();
+					if(chest.isLocked())
+						return;
+					chest.setLock(ChatColor.GREEN+(Main.getName(player)+"'s key"));
+					chest.update();
+					
+					TextComponent msg = new TextComponent();
+					msg.setText("Only your key can open this chest now");
+					msg.setColor(ChatColor.GREEN);
+					player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+					player.sendMessage(ChatColor.BLUE+"Type /getkey to get your personal key!");
+					
+					event.setCancelled(true);
+					item.setAmount(item.getAmount()-1);
+				}
+				else {
+					TextComponent msg = new TextComponent();
+					msg.setText("You can't lock double chests");
+					msg.setColor(ChatColor.RED);
+					player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+					event.setCancelled(true);
+				}
 			}
 		}
 	}
@@ -633,22 +691,140 @@ public class ListenerClass implements Listener {
 				if(main!=null && main.getType()!=Material.AIR && main.getItemMeta().getDisplayName()!=null && main.getItemMeta().getDisplayName().equals(chest.getLock()))
 					return;
 				event.setCancelled(true);
-				event.getPlayer().sendMessage(ChatColor.RED+"You can't break a locked chest without using its key!\n"+ChatColor.GRAY+"(By hand, that is...)");
+				event.getPlayer().sendMessage(ChatColor.RED+"You can't break a locked chest if not holding its key!\n"+ChatColor.GRAY+"(By hand, that is...)");
 			}
 		}
 	}
 	@EventHandler
 	public void enchantItem(EnchantItemEvent event){
 		if(Main.scoreboard.getObjective("role").getScore(event.getEnchanter().getName()).getScore()!=2) {
-			if(event.getItem().getItemMeta().getLore()==null || !event.getItem().getItemMeta().getLore().contains("lux in tenebris")) {
+			if(Main.scoreboard.getObjective("class").getScore(event.getEnchanter().getName()).getScore()==2) {
+				if(event.getItem().getItemMeta().getLore()==null || !event.getItem().getItemMeta().getLore().contains("lux in tenebris")) {
+					event.setCancelled(true);
+					event.getEnchanter().getOpenInventory().close();
+					event.getEnchanter().sendMessage(ChatColor.AQUA+"You only know how to enchant your Mage armors!");
+				}
+				else
+					event.getEnchantsToAdd().put(Enchantment.VANISHING_CURSE,1);
+			}
+			else {
 				event.setCancelled(true);
 				event.getEnchanter().getOpenInventory().close();
-				event.getEnchanter().sendMessage(ChatColor.AQUA+"You only know how to enchant your Mage armors!");
+				event.getEnchanter().sendMessage(ChatColor.AQUA+"How did you do that O.O");
+			}
+		}
+		if(!event.isCancelled()) {
+			if(event.getEnchantsToAdd().containsKey(Enchantment.LOOT_BONUS_BLOCKS)) {
+				int looting = event.getEnchantsToAdd().get(Enchantment.LOOT_BONUS_BLOCKS);
+				if(looting==3) {
+					event.getEnchantsToAdd().put(Enchantment.LOOT_BONUS_BLOCKS, 1);
+					if(event.getEnchantsToAdd().getOrDefault(Enchantment.DURABILITY,0)<3) {
+						event.getEnchantsToAdd().put(Enchantment.DURABILITY, 3);
+						event.getEnchanter().sendMessage(ChatColor.AQUA+"Fortune 3 was replaced with Fortune 1 because it breaks the economy, however, you were given unbreaking 3 in it's stead.");
+					}
+					else if(event.getEnchantsToAdd().getOrDefault(Enchantment.DIG_SPEED,0)<4) {
+						event.getEnchantsToAdd().put(Enchantment.DIG_SPEED, 4);
+						event.getEnchanter().sendMessage(ChatColor.AQUA+"Fortune 3 was replaced with Fortune 1 because it breaks the economy, however, you were given Efficiency 4 in it's stead.");
+					}
+					else {
+						event.getEnchantsToAdd().put(Enchantment.DIG_SPEED, 5);
+						event.getEnchanter().sendMessage(ChatColor.AQUA+"Fortune 3 was replaced with Fortune 1 because it breaks the economy, however, you were given efficiency 5 in it's stead!");
+					}
+				}
+				else if(looting==2) {
+					event.getEnchantsToAdd().put(Enchantment.LOOT_BONUS_BLOCKS, 1);
+					if(!event.getEnchantsToAdd().containsKey(Enchantment.DURABILITY) || event.getEnchantsToAdd().get(Enchantment.DURABILITY)<2) {
+						event.getEnchantsToAdd().put(Enchantment.DURABILITY, 2);
+						event.getEnchanter().sendMessage(ChatColor.AQUA+"Fortune 2 was replaced with Fortune 1 because it breaks the economy, however, you were given unbreaking 2 in it's stead.");
+					}
+					else if(!event.getEnchantsToAdd().containsKey(Enchantment.DIG_SPEED) || event.getEnchantsToAdd().get(Enchantment.DIG_SPEED)<2) {
+						event.getEnchantsToAdd().put(Enchantment.DIG_SPEED, 2);
+						event.getEnchanter().sendMessage(ChatColor.AQUA+"Fortune 2 was replaced with Fortune 1 because it breaks the economy, however, you were given Efficiency 2 in it's stead.");
+					}
+					else{
+						event.getEnchanter().sendMessage(ChatColor.AQUA+"Fortune 2 was replaced with Fortune 1 because it breaks the economy");
+					}
+				}
+			}
+//			else if(event.getEnchantsToAdd().getOrDefault(Enchantment.PROTECTION_ENVIRONMENTAL, 0)==4) {
+//				event.getEnchantsToAdd().put(Enchantment.PROTECTION_ENVIRONMENTAL, 3);
+//				if(event.getEnchantsToAdd().getOrDefault(Enchantment.DURABILITY, 0)<3) {
+//					event.getEnchantsToAdd().put(Enchantment.DURABILITY, 3);
+//					event.getEnchanter().sendMessage(ChatColor.AQUA+"Protection 4 was downgraded to protection 3, however you were given unbreaking 3 in its stead.");
+//				}
+//				else {
+//					String name = event.getItem().getType().name();
+//					if(name.contains("LEGGINGS") || name.contains("CHESTPLATE")) {
+//						if(event.getEnchantsToAdd().getOrDefault(Enchantment.THORNS, 0)<2) {
+//							event.getEnchantsToAdd().put(Enchantment.THORNS, 2);
+//							event.getEnchanter().sendMessage(ChatColor.AQUA+"Protection 4 was downgraded to protection 3, however you were given Thorns 2 in its stead.");
+//						}
+//						else{
+//							event.getEnchantsToAdd().put(Enchantment.THORNS, 3);
+//							event.getEnchanter().sendMessage(ChatColor.AQUA+"Protection 4 was downgraded to protection 3, however you were given Thorns 3 in its stead.");
+//						}
+//					}
+//					else if(name.contains("HELMET")) {
+//						if(event.getEnchantsToAdd().getOrDefault(Enchantment.OXYGEN, 0)!=2) {
+//							event.getEnchantsToAdd().put(Enchantment.THORNS, 2);
+//							event.getEnchanter().sendMessage(ChatColor.AQUA+"Protection 4 was downgraded to protection 3, however you were given Thorns 2 in its stead.");
+//						}
+//					}
+//				}
+//			}
+		}
+	}
+	@EventHandler
+	public void prepAnvil(PrepareAnvilEvent event) {
+		if(event.getResult()!=null && event.getResult().getType()!=Material.AIR) {
+			if(event.getResult().containsEnchantment(Enchantment.LOOT_BONUS_BLOCKS) && event.getResult().getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS) >1) {
+				event.getResult().removeEnchantment(Enchantment.LOOT_BONUS_BLOCKS);
+				event.getResult().addEnchantment(Enchantment.LOOT_BONUS_BLOCKS, 1);
+			}
+//			else {
+//				int i=0;
+//				for(ItemStack is : event.getInventory().getStorageContents()) {
+//					if(is!=null && is.getType()!=Material.AIR)
+//						i++;
+//				}
+//				if(i==1) {
+//					event.getInventory().setRepairCost(1);
+//					ItemStack item = event.getInventory().getStorageContents()[0];
+//					ItemStack result = event.getResult();
+//					ItemMeta itemMeta = item.getItemMeta();
+//					ItemMeta resultMeta = result.getItemMeta();
+//					if(item.getItemMeta() instanceof Repairable) {
+//						Repairable ing = (Repairable) itemMeta;
+//						Repairable res = (Repairable) resultMeta;
+//						res.setRepairCost(ing.getRepairCost());
+//						ing.setRepairCost(0);
+//						item.setItemMeta(itemMeta);
+//						result.setItemMeta(resultMeta);
+//					}
+//				}
+//					
+//			}
+		}
+	}
+	@EventHandler
+	public void drinkPotion(PlayerItemConsumeEvent event) {
+		if(event.getItem().getType().equals(Material.POTION)) {
+			List<String> lore = event.getItem().getItemMeta().getLore();
+			if(lore!=null && lore.size()==1 && lore.get(0).contains(" orbs")) {
+				Player player = event.getPlayer();
+				event.setCancelled(true);
+				player.getInventory().removeItem(event.getItem());
+				String xp = ChatColor.stripColor(lore.get(0));
+				Experience.changeExp(player, Integer.parseInt(xp.substring(0, xp.indexOf(' '))));
 			}
 		}
 	}
 	@EventHandler
-	public void bedLeave(PlayerBedLeaveEvent event) {
-		event.getPlayer().setCompassTarget(event.getPlayer().getLocation().add(0,0,-100000));
+	public void moveItem(InventoryMoveItemEvent event) {
+		if(event.getSource().getType().equals(InventoryType.CHEST) && event.getDestination().getType().equals(InventoryType.HOPPER)) {
+			Chest chest = (Chest) event.getSource().getHolder();
+			if(chest.isLocked())
+				event.setCancelled(true);
+		}
 	}
 }

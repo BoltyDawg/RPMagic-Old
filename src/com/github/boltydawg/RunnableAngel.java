@@ -8,11 +8,14 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
+
 public class RunnableAngel extends BukkitRunnable{
-	private static ArrayList<Player> angels = new ArrayList<Player>();
+	public static ArrayList<Player> angels = new ArrayList<Player>();
 	
 	public RunnableAngel() {
-		
 	}
 	@Override
 	public void run() {
@@ -21,15 +24,30 @@ public class RunnableAngel extends BukkitRunnable{
 			return;
 		}
 		for(Player player : angels) {
-			if(!player.isOnline())
-				angels.remove(player);
-			else if(player.getInventory().getItemInMainHand().getType()==Material.ELYTRA)
-				player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,30,0));
+			if(player.getInventory().getItemInMainHand().getType()==Material.ELYTRA) {
+				int dmg = RunnableLastDamage.timeSinceLastDamage(player);
+				if(dmg<=4){
+					if(player.hasPotionEffect(PotionEffectType.LEVITATION)) {
+						player.sendMessage(ChatColor.RED+ChatColor.ITALIC.toString()+"You've been shot out of the sky!");
+						player.removePotionEffect(PotionEffectType.LEVITATION);
+					}
+					else {
+						TextComponent msg = new TextComponent();
+						msg.setText("You have recently taken damage and must wait another "+(4-dmg)+" seconds");
+						msg.setColor(ChatColor.RED);
+						player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
+					}
+				}
+				else {
+					player.removePotionEffect(PotionEffectType.LEVITATION);
+					player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,20,0));
+				}
+			}
 		}
 	}
 	public static void activate(Player player) {
 		if(angels.size()==0) 
-			new RunnableAngel().runTaskTimer(Main.instance, 10L, 10L);
+			new RunnableAngel().runTaskTimer(Main.instance, 10L, 15L);
 		angels.add(player);
 	}
 

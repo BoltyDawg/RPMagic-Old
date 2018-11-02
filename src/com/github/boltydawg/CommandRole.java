@@ -24,7 +24,9 @@ public class CommandRole implements CommandExecutor {
 		switch(args[1]) {
 			case "blacksmith":{
 				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+name+" parent add blacksmith");
-				Main.scoreboard.getObjective("role").getScore(name).setScore(2);
+				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"mmoedit "+name+" Repair 100");
+				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"mmoedit "+name+" Salvage 100");
+				Main.scoreboard.getObjective("role").getScore(name).setScore(1);
 				player.sendMessage(ChatColor.GREEN+"You are now a blacksmith!");
 				break;
 			}
@@ -54,7 +56,7 @@ public class CommandRole implements CommandExecutor {
 				break;
 			}
 			case "sheriff":{
-				ItemStack lasso = new ItemStack(Material.VILLAGER_SPAWN_EGG);
+				ItemStack lasso = new ItemStack(Material.LEAD);
 				ItemMeta met = lasso.getItemMeta();
 				met.setDisplayName(ChatColor.GREEN+ChatColor.ITALIC.toString()+"Sheriff Lasso");
 				ArrayList<String> lore = new ArrayList<String>();

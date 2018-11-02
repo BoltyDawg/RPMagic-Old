@@ -2,6 +2,8 @@ package com.github.boltydawg;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import net.md_5.bungee.api.ChatColor;
@@ -235,7 +237,7 @@ public class Spells{
 			}
 			case"soothe":{
 				if(mag>=33) {
-					Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"effect give "+player.getName()+" regeneration 10 1");
+					player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,200,1));
 					Main.scoreboard.getObjective("Magicka").getScore(player.getName()).setScore(mag-33);
 				}
 				else enoughMagicka = false;

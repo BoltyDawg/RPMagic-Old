@@ -15,6 +15,8 @@ import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import com.github.boltydawg.ArmorEquipEvent.EquipMethod;
 
@@ -191,7 +193,9 @@ public class ArmorListener implements Listener{
 			if(armorEquipEvent.isCancelled()){
 				ItemStack i = e.getBrokenItem().clone();
 				i.setAmount(1);
-				i.setDurability((short) (i.getDurability() - 1));
+				Damageable d = (Damageable)i.getItemMeta();
+				d.setDamage(d.getDamage()-1);
+				i.setItemMeta((ItemMeta)d);
 				if(type.equals(ArmorType.HELMET)){
 					p.getInventory().setHelmet(i);
 				}else if(type.equals(ArmorType.CHESTPLATE)){

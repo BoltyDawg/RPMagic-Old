@@ -66,8 +66,10 @@ public class CommandSubclass implements CommandExecutor {
 					if(t)
 						player.sendMessage(ChatColor.DARK_PURPLE+"YOUR MUSCLES BECOME SO LARGE THAT YOUR ARMOR POPS OFF");
 				}
-				Nick vallone = new Nick(player);
-				vallone.set(Main.getName(player).toUpperCase());
+				if(Main.nick) {
+					Nick vallone = new Nick(player);
+					vallone.set(Main.getName(player).toUpperCase());
+				}
 				ItemStack bone = new ItemStack(Material.BONE);
 				ItemMeta met = bone.getItemMeta();
 				met.setDisplayName(Main.getName(player)+" FIRST BONE");
@@ -80,12 +82,12 @@ public class CommandSubclass implements CommandExecutor {
 				player.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).setBaseValue(8);
 				player.setHealth(40);
 				
-				Main.rageBars.put(player, Main.rageBar(player));
+				Main.rageBars.put(player.getUniqueId(), Main.rageBar(player));
 				
-				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"mmoedit "+player.getName()+" Unarmed 75");
+				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"mmoedit "+player.getName()+" Unarmed 100");
 				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+player.getName()+" parent add barbarian");
 				Main.scoreboard.getObjective("subclass").getScore(player.getName()).setScore(1);
-				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "give "+player.getName()+" written_book{pages:[\"{\\\"text\\\":\\\"YOU BARBARIAN NOW,\\\\nGOOD.\\\\nYOU A BROTHER/SISTER NOW,\\\\nBLOOD RUNS DEEP.\\\\n\\\\nWE STEM FROM ANCIENT GROUP OF SAVAGES THAT HELD THE WORLD IN THEIR HANDS. THEY ATE WHAT THEY WANTED, THEY ATE WHO THEY WANTED.\\\"}\",\"{\\\"text\\\":\\\"BUT ENOUGH WITH OUR PEOPLE'S HISTORY, ONTO CURRENT TIME.\\\\n\\\\nYOU A BARBARIAN, YOU GOT BIG HEALTH POOL. NO NEED FOR ARMOR, YOU HAVE BIG MUSCLES INSTEAD. PUNY MAN ARMOR NOT FIT YOU. KEEP BONE IN YOUR MOUTH TO PROTECT YOU.\\\"}\",\"{\\\"text\\\":\\\"UPGRADE BONE BY SURROUNDING IT WITH IRON OR DIAMONDS. RIGHT CLICK WITH BONE IN HAND TO PUT IT IN YOUR MOUTH.\\\\n\\\\nYOU HAVE BLOOD OF ANCESTORS, ANCESTOR RAGE RUNS INSIDE YOU. AFTER DEALING/TAKING A CERTAIN AMOUNT OF DAMAGE,\\\"}\",\"{\\\"text\\\":\\\"YOU WILL GET THE RAGE FLAME. RIGHT CLICK THE FLAME TO ACTIVATE RAGE MODE, TO GET VARIOUS BUFFS. BUT IT TIRE YOU, USE WISELY.\\\\n\\\\nLAST THING YOU NEED TO KNOW: DON'T EAT THE PUNY MAN'S COOKED MEAT. ANCESTORS DID NOT HAVE FIRE TO COOK\\\"}\",\"{\\\"text\\\":\\\"THEIR FOOD WITH. YOU EAT FOOD RAW AND GET REGENERATION BONUS.\\\\nEAT IT COOKED.... AND GET SICK!\\\\n\\\\nNOW GO SMASH SKULLS!!!!\\\"}\"],title:\"BARBARIAN BOOK\",author:\"BOBRA D'UBRA\"}");
+				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "give "+player.getName()+" written_book{pages:[\"{\\\"text\\\":\\\"YOU BARBARIAN NOW,\\\\nGOOD.\\\\nYOU A BROTHER/SISTER NOW,\\\\nBLOOD RUNS DEEP.\\\\n\\\\nWE STEM FROM ANCIENT GROUP OF SAVAGES THAT HELD THE WORLD IN THEIR HANDS. THEY ATE WHAT THEY WANTED, THEY ATE WHO THEY WANTED.\\\"}\",\"{\\\"text\\\":\\\"BUT ENOUGH WITH OUR PEOPLE'S HISTORY, ONTO CURRENT TIME.\\\\n\\\\nYOU A BARBARIAN, YOU GOT BIG HEALTH POOL. NO NEED FOR ARMOR, YOU HAVE BIG MUSCLES INSTEAD. PUNY MAN ARMOR NOT FIT YOU. KEEP BONE IN YOUR MOUTH TO PROTECT YOU.\\\"}\",\"{\\\"text\\\":\\\"UPGRADE BONE BY SURROUNDING IT WITH IRON OR DIAMONDS. RIGHT CLICK WITH BONE IN HAND TO PUT IT IN YOUR MOUTH.\\\\n\\\\nYOU HAVE BLOOD OF ANCESTORS, ANCESTOR RAGE RUNS INSIDE YOU. AFTER DEALING/TAKING A CERTAIN AMOUNT OF DAMAGE,\\\"}\",\"{\\\"text\\\":\\\"YOU WILL GET THE RAGE FLAME. RIGHT CLICK THE FLAME TO ACTIVATE RAGE MODE, TO GET VARIOUS BUFFS. BUT IT TIRE YOU, USE WISELY.\\\\n\\\\nBARBARIANS QUICK, USE SHIELD WHILE SPRINTING TO DASH FORWARD AND SMASH THINGS IN PATH.\\\"}\",\"{\\\"text\\\":\\\"LAST THING YOU NEED TO KNOW: DON'T EAT THE PUNY MAN'S COOKED MEAT. ANCESTORS DID NOT HAVE FIRE TO COOK\\\\nTHEIR FOOD WITH. YOU EAT FOOD RAW AND GET REGENERATION BONUS.\\\\nEAT IT COOKED.... AND GET SICK!\\\\n\\\\nNOW GO SMASH SKULLS!!!!\\\"}\"],title:\"BARBARIAN BOOK\",author:\"BOBRA D'UBRA\"}");
 				player.sendMessage(ChatColor.DARK_AQUA+"YOU ARE NOW A BARBARIAN");
 				break;
 			}
@@ -165,7 +167,7 @@ public class CommandSubclass implements CommandExecutor {
 				
 				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"lp user "+player.getName()+" parent add assassin");
 				Main.scoreboard.getObjective("subclass").getScore(player.getName()).setScore(7);
-				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "give "+player.getName()+" written_book{pages:[\"{\\\"text\\\":\\\"As an assassin, you are a master of stealth and striking quickly but fiercely.\\\\n\\\\nThe pocket watch you have in your inventory is your greatest asset, don't lose it!\\\"}\",\"[\\\"\\\",{\\\"text\\\":\\\"When you right click while the pocket watch is in your main hand, it will turn you invisible and give you strength.\\\\nWhen you right click with it in your off-hand, you'll cast \\\"},{\\\"text\\\":\\\"blink\\\",\\\"italic\\\":true},{\\\"text\\\":\\\" and teleport forward in the direction you're facing.\\\",\\\"color\\\":\\\"reset\\\"}]\",\"{\\\"text\\\":\\\"The other tool you have is the Assassin's \\\\\\\"Dagger\\\\\\\". This weapon deals massive damage damage to your foes, but takes very long to charge up and only has 10 uses.\\\\nYou can craft one of these by using the vanilla gold sword recipe.\\\"}\"],title:Assassins,author:\"Cerdic Tal\"}");
+				Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "give "+player.getName()+" written_book{pages:[\"{\\\"text\\\":\\\"As an assassin, you are a master of stealth and striking quickly but fiercely.\\\\n\\\\nThe pocket watch you have in your inventory is your greatest asset, don't lose it!\\\"}\",\"[\\\"\\\",{\\\"text\\\":\\\"When you right click while the pocket watch is in your main hand, it will cast \\\"},{\\\"text\\\":\\\"cloak\\\",\\\"italic\\\":true},{\\\"text\\\":\\\". and when you right click with it in your off-hand, it'll cast \\\",\\\"color\\\":\\\"reset\\\"},{\\\"text\\\":\\\"blink.\\\",\\\"italic\\\":true},{\\\"text\\\":\\\"\\\\n\\\\n\\\",\\\"color\\\":\\\"reset\\\"},{\\\"text\\\":\\\"Blink\\\",\\\"italic\\\":true},{\\\"text\\\":\\\" causes you to teleport forward in the direction your facing.\\\",\\\"color\\\":\\\"reset\\\"}]\",\"[\\\"\\\",{\\\"text\\\":\\\"Cloak\\\",\\\"italic\\\":true},{\\\"text\\\":\\\" allows you to turn invisible for 15 seconds and gives you a damage boost. Also, it will unequip any armor you're wearing so that you turn completely invisible. During cloak you'll still keep your armor stats, but your armor's enchantments won't have any effect.\\\",\\\"color\\\":\\\"reset\\\"}]\",\"{\\\"text\\\":\\\"The other tool you have is the Assassin's \\\\\\\"Dagger\\\\\\\". This weapon deals massive damage damage to your foes, but takes very long to charge up and only has 10 uses.\\\\nYou can craft one of these by using the vanilla gold sword recipe.\\\"}\"],title:Assassins,author:\"Cerdic Tal\"}");
 				player.sendMessage(ChatColor.DARK_AQUA+"You are now an Assassin!");
 				break;
 			}

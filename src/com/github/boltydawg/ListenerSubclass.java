@@ -10,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Damageable;
@@ -91,7 +92,7 @@ public class ListenerSubclass implements Listener{
 						player.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE,260,2));
 						player.addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING,260,7));
 						Main.scoreboard.getObjective("damage").getScore(player.getName()).setScore(0);
-						Main.rageBars.get(player).setProgress(0);
+						Main.rageBars.get(player.getUniqueId()).setProgress(0);
 						player.getInventory().removeItem(item);
 						new BukkitRunnable(){
 					        @Override
@@ -122,14 +123,24 @@ public class ListenerSubclass implements Listener{
 					item.setAmount(item.getAmount()-1);
 					event.setCancelled(true);
 				}
+				else if(sub==1 && item.getType().equals(Material.SHIELD)) {
+					int stam = Main.scoreboard.getObjective("Stamina").getScore(player.getName()).getScore();
+					if(!player.isBlocking() && stam>=75 && player.isSprinting()) {
+						Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" dash");
+						Main.scoreboard.getObjective("Stamina").getScore(player.getName()).setScore(stam-75);
+						RunnableRegen.fighterRegen(player);
+					}
+				}
 				//Tank shield
 				else if(sub==4 && event.getHand().equals(EquipmentSlot.HAND) && item.getType().equals(Material.SHIELD) && item.getItemMeta().getLore()!=null && item.getItemMeta().getLore().contains("An Unbreakable Wall")){
-					short d = item.getDurability();
+					org.bukkit.inventory.meta.Damageable dmgable = (org.bukkit.inventory.meta.Damageable)item.getItemMeta();
+					int d = dmgable.getDamage();
 					if(d<=294 && !player.isBlocking()) {
 						Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),"castp "+player.getName()+" pull");
 						if(!cool1.getOrDefault(player,false)) {
 							event.setCancelled(true);
-							item.setDurability((short)(d+42));
+							dmgable.setDamage(d+42);
+							item.setItemMeta((ItemMeta)dmgable);
 							cool1.put(player, true);
 							new BukkitRunnable(){
 						        @Override
@@ -165,6 +176,17 @@ public class ListenerSubclass implements Listener{
 								player.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE,300,0,false,true));
 								event.setCancelled(true);
 								cool2.put(player, true);
+								double stat = player.getAttribute(Attribute.GENERIC_ARMOR).getValue();
+								ItemStack[] armors = player.getInventory().getArmorContents();
+								player.getInventory().setArmorContents(new ItemStack[]{null,null,null,null});
+								player.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(stat);
+								new BukkitRunnable() {
+									@Override
+									public void run() {
+										player.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(0);
+										player.getInventory().setArmorContents(armors);
+									}
+								}.runTaskLater(Main.instance, 300);
 								new BukkitRunnable(){
 							        @Override
 							        public void run(){
@@ -178,11 +200,12 @@ public class ListenerSubclass implements Listener{
 							   }.runTaskLater(Main.instance, 900L);
 							}
 						}
+						//blink
 						else {
 							int dmg = RunnableLastDamage.timeSinceLastDamage(player);
-							if(dmg<=4) {
+							if(dmg<=2) {
 								TextComponent msg = new TextComponent();
-								msg.setText("You have recently taken damage and must wait another "+(4-dmg)+" seconds");
+								msg.setText("You have recently taken damage and must wait another "+(2-dmg)+" seconds");
 								msg.setColor(ChatColor.AQUA);
 								player.spigot().sendMessage(ChatMessageType.ACTION_BAR,msg);
 								return;
@@ -255,10 +278,10 @@ public class ListenerSubclass implements Listener{
 				if(sub==1) {
 					if(dmg>=Main.RAGE) {
 						giveRageDrop(player);
-						Main.rageBars.get(player).setProgress(1.0);
+						Main.rageBars.get(player.getUniqueId()).setProgress(1.0);
 					}
 					else
-						Main.rageBars.get(player).setProgress((double)dmg/Main.RAGE);
+						Main.rageBars.get(player.getUniqueId()).setProgress((double)dmg/Main.RAGE);
 				}
 				//Knight Saturation
 				else if(sub==2) {
@@ -314,6 +337,22 @@ public class ListenerSubclass implements Listener{
 					player.setGliding(false);
 				}
 				else if(event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+					ItemStack boots = player.getInventory().getBoots();
+					if(boots.getType().equals(Material.GOLDEN_BOOTS)) {
+						ItemMeta met = boots.getItemMeta();
+						if(met.getLore().contains("Sky above,") && player.getFallDistance()>=10) {
+							TNTPrimed tnt = ((TNTPrimed)player.getWorld().spawnEntity(player.getLocation(), EntityType.PRIMED_TNT));
+							tnt.setFuseTicks(0);
+							tnt.setYield(player.getFallDistance()/10);
+							boots.addUnsafeEnchantment(Enchantment.PROTECTION_EXPLOSIONS, 100);
+							new BukkitRunnable(){
+						        @Override
+						        public void run(){
+						        	boots.removeEnchantment(Enchantment.PROTECTION_EXPLOSIONS);
+						        }
+						   }.runTaskLater(Main.instance, 10L);
+						}
+					}
 					boolean b = false;
 					for(Entity e : player.getNearbyEntities(5, 5, 5)) {
 						if(e instanceof Damageable) {
@@ -338,23 +377,28 @@ public class ListenerSubclass implements Listener{
 				int rage = (int)Math.round(event.getDamage()+Main.scoreboard.getObjective("damage").getScore(player.getName()).getScore());
 				if(rage>=Main.RAGE) {
 					Main.scoreboard.getObjective("damage").getScore(player.getName()).setScore(rage);
-					Main.rageBars.get(player).setProgress(1.0);
+					Main.rageBars.get(player.getUniqueId()).setProgress(1.0);
 					giveRageDrop(player);
 				}
-				else {
+				else if(rage>=0){
 					Main.scoreboard.getObjective("damage").getScore(player.getName()).setScore(rage);
-					Main.rageBars.get(player).setProgress((double)rage/Main.RAGE);
+					Main.rageBars.get(player.getUniqueId()).setProgress((double)rage/Main.RAGE);
 				}
 			}
 			//Tank shield regen
 			else if(sub==4) {
 				ItemStack shield = player.getInventory().getItemInOffHand();
 				if(shield!=null && shield.getType().equals(Material.SHIELD) && shield.getItemMeta().getLore()!=null && shield.getItemMeta().getLore().contains("An Unbreakable Wall")) {
-					short s = (short)(shield.getDurability()-(2*event.getDamage()));
-					if(s>=0)
-						shield.setDurability(s);
-					else
-						shield.setDurability((short)0);
+					org.bukkit.inventory.meta.Damageable dmgable = (org.bukkit.inventory.meta.Damageable)shield.getItemMeta();
+					int s = (int)Math.round(dmgable.getDamage()-(2*event.getDamage()));
+					if(s>=0) {
+						dmgable.setDamage(s);
+						shield.setItemMeta((ItemMeta)dmgable);
+					}
+					else {
+						dmgable.setDamage(0);
+						shield.setItemMeta((ItemMeta)dmgable);
+					}
 				}
 			}
 		}
@@ -529,10 +573,8 @@ public class ListenerSubclass implements Listener{
 			if(tele.containsValue(event.getLocation())) {
 				if(event.getLocation().equals(tele.get(player))) {
 					player.teleport(Main.beacons.get(player.getUniqueId()));
-					player.setCompassTarget(player.getLocation().add(0,0,-100000));
 					tele.get(player).getBlock().breakNaturally();
 					tele.remove(player);
-					player.setCompassTarget(player.getLocation().add(0,0,-100000));
 				}
 				else {
 					TextComponent msg = new TextComponent();
@@ -708,11 +750,15 @@ public class ListenerSubclass implements Listener{
 	}
 	@EventHandler
 	public void onChat(AsyncPlayerChatEvent event) {
-		event.getRecipients().clear();
-		for(Entity e: event.getPlayer().getNearbyEntities(100, 100, 100)) {
-			if(e instanceof Player)
-				event.getRecipients().add((Player)e);
+		if(Main.local) {
+			event.getRecipients().clear();
+			for(Player e: Main.instance.getServer().getOnlinePlayers()) {
+				if(e.getWorld().equals(event.getPlayer().getWorld()) && e.getLocation().distance(event.getPlayer().getLocation()) <=125)
+					event.getRecipients().add((Player)e);
+			}
+			event.getRecipients().add(event.getPlayer());
 		}
+		//barbarian caps lock
 		if(event.getMessage().charAt(0)!='/' && Main.scoreboard.getObjective("subclass").getScore(event.getPlayer().getName()).getScore()==1) {
 			event.setMessage(event.getMessage().toUpperCase());
 		}
@@ -745,7 +791,6 @@ public class ListenerSubclass implements Listener{
 	        		        	if(arrow.isInBlock()) {
 	        		        		player.teleport(arrow);
 	        		        		player.damage(2.0);
-	        		        		player.setCompassTarget(player.getLocation().add(0,0,-100000));
 	        		        		arrow.remove();
 	        		        		cancel();
 	        		        		return;
