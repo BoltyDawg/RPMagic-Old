@@ -2,9 +2,9 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.boltydawg</groupId>
   <artifactId>rpmagic</artifactId>
-  <version>0.5</version>
+  <version>1.2</version>
   <name>RPMagic</name>
-  <description>My personal plugin</description>
+  <description>A new Roleplaying Experience</description>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
@@ -29,7 +29,7 @@
     <dependency>
            <groupId>org.spigotmc</groupId>
            <artifactId>spigot-api</artifactId>
-           <version>1.13-R0.1-SNAPSHOT</version>
+           <version>1.13.1-R0.1-SNAPSHOT</version>
            <scope>provided</scope>
     </dependency>
  </dependencies>

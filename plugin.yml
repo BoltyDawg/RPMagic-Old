@@ -1,6 +1,6 @@
 name: RPMagic
 main: com.github.boltydawg.Main
-version: 1.0
+version: 1.2
 author: BoltyDawg
 description: A magical class-based roleplaying system!
 depend: [Magic]
@@ -66,3 +66,23 @@ commands:
     usage: /subclass <player> <role>
     permission: rpm.admin
     permission-message: You don't have the rpm.admin permission.
+  local:
+    description: toggle local chat
+    usage: /local
+    permission: rpm.admin
+    permission-message: You don't have the rpm.admin permission.
+  openinv:
+    description: Open a players inventory
+    usage: /openinv <player>
+    permission: rpm.admin
+    permission-message: You don't have the rpm.admin permission.
+  dungeons:
+    description: Options for starting, ending, and resetting dungeons
+    usage: /dungeons <start> <dungeon name> | <end> <dungeon name> | <reset>
+    permission: rpm.admin
+    permission-message: You don't have the rpm.admin permission.
+  rename:
+    description: Rename the item in your main hand.
+    usage: /rename <new item name, including any spaces>
+    permission: rpm.default
+    permission-message: You don't have the rpm.default permission.
